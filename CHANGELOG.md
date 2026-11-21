@@ -2,6 +2,35 @@
 # Changelog
 
 
+## [Unreleased]
+
+Work in progress towards v0.2.0. Only the items below exist; the
+evidence registry, lifecycle governance, conflict detection, and
+evaluation engine described in the v0.2.0 design documents are not
+implemented yet.
+
+### Added
+- `paisl` Python package with a `src/` layout and a `pyproject.toml`
+- `python -m paisl validate` command with text and JSON reports
+- `paisl` console script entry point
+- Test suite covering validator equivalence and CLI behaviour
+
+### Changed
+- The validator implementation moved from `scripts/validate.py` into
+  the `paisl` package
+- `scripts/validate.py` is now a compatibility wrapper that resolves
+  the package from the repository source tree
+
+### Compatibility
+- `python scripts/validate.py` keeps the same output and exit codes
+  and needs no installation step
+- No Standard Schema changes
+- No Catalog changes
+- No Standard or Skill content changes
+- The license scope check now ignores build artefacts such as
+  `*.egg-info`
+
+
 ## [0.1.1] - 2026-11-21
 
 ### Added
