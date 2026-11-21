@@ -25,5 +25,5 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
 
-      - name: Validate standards
+      - name: Validate registry and Skills
         run: python scripts/validate.py

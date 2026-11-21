@@ -9,9 +9,16 @@
 - task-clarification Skill for PAISL-PROD-001
 - Standard-to-Skill coverage governance
 
+### Validation
+- Validator now enforces Skill to Standard reference integrity
+- Validator checks Skill structure, required sections, and frontmatter
+- Validator checks Catalog metadata, category coverage, and ID numbering
+- Validator checks README to Skill list consistency
+
 ### Documentation
 - Updated English and Chinese README
 - Extended the user guide for seven Skills
+- Documented the implemented validator capabilities in governance
 
 ### Compatibility
 - No Standard Schema changes

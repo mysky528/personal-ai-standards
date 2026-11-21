@@ -132,10 +132,26 @@ PAISL-PROD-001 is referenced by task-clarification.
 These Skills are advisory execution procedures,
 not third-party certifications.
 
-### 6. Future Automation
+### 6. Automation Status / 自动化现状
 
-A later release MAY add automated coverage reports,
-Skill reference validation, and evaluation fixtures.
+The v0.1.1 validator implements:
 
-These capabilities are not claimed as implemented
-by the v0.1.0 validator.
+- Catalog to Standard referential integrity.
+- Skill to Standard reference resolution.
+  A Skill referencing an unknown or malformed Standard ID
+  fails validation.
+- Skill structure checks: frontmatter, required sections,
+  and agreement with the Skill directory name.
+- Catalog metadata checks: category coverage, ID numbering,
+  and version agreement.
+- README to Skill list consistency.
+
+Not implemented in v0.1.x:
+
+- Coverage classification as machine-readable metadata.
+- Automated evaluation fixtures.
+- Semantic verification of Standard content.
+- Automated coverage reports for uncovered Standards.
+
+A later release MAY add automated coverage reports
+and evaluation fixtures.
