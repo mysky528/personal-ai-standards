@@ -22,7 +22,7 @@
 
 ### Compatibility
 - No Standard Schema changes
-- No Catalog changes
+- Catalog version synchronized to 0.1.1; no standard entries changed
 - No breaking changes
 
 

@@ -143,7 +143,8 @@ The v0.1.1 validator implements:
 - Skill structure checks: frontmatter, required sections,
   and agreement with the Skill directory name.
 - Catalog metadata checks: category coverage, ID numbering,
-  and version agreement.
+  and agreement between `catalog_version` and the release version
+  declared in the CHANGELOG and both READMEs.
 - README to Skill list consistency.
 
 Not implemented in v0.1.x:

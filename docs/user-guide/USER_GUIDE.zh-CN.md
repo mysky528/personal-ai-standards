@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
-# PAISL v0.1.0 用户使用手册
+# PAISL v0.1.1 用户使用手册
 
 > Personal AI Standards Library · User Guide  
 > 文档版本：1.1 · 适用软件版本：PAISL v0.1.1 · 语言：简体中文  
@@ -26,7 +26,7 @@
 
 PAISL（Personal AI Standards Library，个人 AI 标准库）是开放、双语、机器可读的标准与实践库，目标是改善人类向 AI 表达需求的方式，以及 AI 产出的清晰度、结构性、可验证性和复用性。
 
-PAISL **不是**大模型、自动化工作流引擎、通用提示词市场或正式标准机构的认证服务。v0.1.0 的交付物是一个基于 Git 文件的标准注册表、可供 Agent 阅读的 Skills、Schema 和结构校验工具。
+PAISL **不是**大模型、自动化工作流引擎、通用提示词市场或正式标准机构的认证服务。v0.1.1 的交付物是一个基于 Git 文件的标准注册表、可供 Agent 阅读的 Skills、Schema 和结构校验工具。
 
 ### 1.2 五个关键概念
 
@@ -40,9 +40,9 @@ PAISL **不是**大模型、自动化工作流引擎、通用提示词市场或�
 
 **关键区别**：Standard 规定“应遵循什么”，Skill 规定“如何在任务中使用”。一个 Skill 可以引用多个 Standard；一个 Standard 也可以被多个 Skill 使用。
 
-### 1.3 v0.1.0 的能力边界
+### 1.3 v0.1.1 的能力边界
 
-**已提供**：12 个 `draft` 标准、5 个 Skill、双语字段、Catalog、JSON Schema、Python 校验器、GitHub Actions 和贡献治理说明。
+**已提供**：12 个 `draft` 标准、7 个 Skill、双语字段、Catalog、JSON Schema、Python 校验器、GitHub Actions 和贡献治理说明。
 
 **未提供**：MCP Server、REST/GraphQL 服务、自动 Skill 安装、自动事实核验、标准语义冲突检测、执行效果自动打分和官方第三方标准认证。
 
@@ -98,7 +98,7 @@ python -m pip install -r requirements-dev.txt
 python scripts/validate.py
 ```
 
-在仓库内容完整且符合 v0.1.0 契约时，**预期**看到：
+在仓库内容完整且符合 v0.1.1 契约时，**预期**看到：
 
 ```text
 === PAISL Validation Report ===
@@ -211,7 +211,7 @@ find standards -type f -name '*.yaml' | sort
 
 ### 4.1 Skill 使用原则
 
-v0.1.0 的 Skill 是仓库中的 Markdown 操作说明，**不是**安装后就能自动运行的可执行程序。Agent 需要能够读取对应文件，并根据其步骤完成任务。具体是否自动发现 `SKILL.md`，取决于 Agent Runtime 的实现和配置。
+v0.1.1 的 Skill 是仓库中的 Markdown 操作说明，**不是**安装后就能自动运行的可执行程序。Agent 需要能够读取对应文件，并根据其步骤完成任务。具体是否自动发现 `SKILL.md`，取决于 Agent Runtime 的实现和配置。
 
 | Skill                 | 使用时机     | 引用标准                          | 预期产物         |
 | --------------------- | -------- | ----------------------------- | ------------ |
@@ -388,7 +388,7 @@ PAISL 仓库位置：<PAISL_ROOT>
 原文：<粘贴原文>
 ```
 
-这是一种**基于文件读取的操作方法**，不是声称 v0.1.0 已具备 OpenCode 原生插件或自动发现功能。
+这是一种**基于文件读取的操作方法**，不是声称 v0.1.1 已具备 OpenCode 原生插件或自动发现功能。
 
 ### 5.4 Agent 输出建议格式
 
@@ -408,7 +408,7 @@ PAISL 仓库位置：<PAISL_ROOT>
 
 ## 06 三个可复现案例
 
-> 复现原则：同一输入、同一 Skill、同一标准版本、同一 Prompt。大模型的措辞可能不同，因此本版采用**行为检查**，不要求逐字匹配。v0.1.0 尚无自动评分器。
+> 复现原则：同一输入、同一 Skill、同一标准版本、同一 Prompt。大模型的措辞可能不同，因此本版采用**行为检查**，不要求逐字匹配。v0.1.1 尚无自动评分器。
 
 ### 案例 A：技术文档规范化
 
@@ -567,7 +567,7 @@ PAISL 仓库位置：<PAISL_ROOT>
 
 ```yaml
 case_id: case-a
-paisl_release: v0.1.0
+paisl_release: v0.1.1
 skill: ste-writing
 standards:
   - PAISL-COMM-001
@@ -582,7 +582,7 @@ result: "pass | fail | needs_review"
 notes: "<具体观察>"
 ```
 
-这只是人工记录模板，**不是** v0.1.0 已实现的自动评测数据格式或 API。
+这只是人工记录模板，**不是** v0.1.1 已实现的自动评测数据格式或 API。
 
 ## 07 新增与修改标准
 
@@ -699,7 +699,7 @@ python scripts/validate.py
 - **标准版本**：YAML 内 `version: 0.1.0`，表示条目自身的版本。
 - **Skill 版本**：`SKILL.md` Frontmatter 中的版本，表示操作说明的版本。
 
-三者可能在未来独立演进。当前 v0.1.0 没有实现自动依赖锁定或兼容性求解。
+三者可能在未来独立演进。当前 v0.1.1 没有实现自动依赖锁定或兼容性求解。
 
 ### 9.3 版权与引用
 
@@ -725,7 +725,7 @@ PAISL 中的“STE 启发式”“OWASP ASVS 启发式”等条目是独立的�
 
 ### Q3：能否直接把 PAISL 当作 MCP Server 使用？
 
-不能。v0.1.0 没有 MCP Server。后续版本可能实现标准发现与读取服务。
+不能。v0.1.1 没有 MCP Server。后续版本可能实现标准发现与读取服务。
 
 ### Q4：`Validation PASSED` 是否意味着所有标准可靠？
 
@@ -745,9 +745,9 @@ v0.1.0 是初始映射，部分来源用于说明背景。后续应优先补充�
 
 ### 用户手册验收清单
 
-- [ ] 文档与实际 v0.1.0 仓库目录一致。
+- [ ] 文档与实际 v0.1.1 仓库目录一致。
 - [ ] 新用户能够安装依赖并运行结构校验。
-- [ ] 12 个标准和 5 个 Skills 均有索引。
+- [ ] 12 个标准和 7 个 Skills 均有索引。
 - [ ] 三个案例的 Prompt 可复制并人工复现。
 - [ ] 所有案例都有可检查的预期行为。
 - [ ] 未把未实现的 MCP、自动评测描述为现有功能。

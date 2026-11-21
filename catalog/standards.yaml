@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-catalog_version: 0.1.0
+catalog_version: 0.1.1
 standards:
   - id: PAISL-COMM-001
     path: standards/communication/ste-writing.yaml

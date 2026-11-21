@@ -53,6 +53,25 @@ def heading_key(heading: str) -> str:
     return heading.split("/")[0].strip()
 
 
+def latest_release_version() -> str | None:
+    """Return the newest release version declared in the CHANGELOG."""
+    changelog = ROOT / "CHANGELOG.md"
+
+    if not changelog.is_file():
+        return None
+
+    versions = re.findall(
+        r"^##\s+\[(\d+\.\d+\.\d+)\]",
+        changelog.read_text(encoding="utf-8"),
+        re.M,
+    )
+
+    if not versions:
+        return None
+
+    return max(versions, key=lambda value: tuple(map(int, value.split("."))))
+
+
 def read_yaml(path: Path):
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
@@ -178,22 +197,21 @@ def validate_catalog_meta(
     if not isinstance(version, str) or not SEMVER_RE.match(version):
         errors.append(f"Invalid catalog_version: {version!r}")
 
-    # The Catalog stores only ID and path. Category, number, and version
-    # are derived from the ID and the referenced standard file.
+    # The Catalog stores only ID and path. Category and number are
+    # derived from the ID. Standard versions are tracked per standard
+    # and are independent of the library release version.
     prefix_to_category = {
         prefix: category for category, prefix in PREFIXES.items()
     }
     numbers: dict = {}
-    standard_versions = set()
 
     for entry in catalog.get("standards", []):
         if not isinstance(entry, dict):
             continue
 
         sid = entry.get("id")
-        relative = entry.get("path")
 
-        if not isinstance(sid, str) or not isinstance(relative, str):
+        if not isinstance(sid, str):
             continue
 
         parts = sid.split("-")
@@ -209,14 +227,6 @@ def validate_catalog_meta(
             continue
 
         numbers.setdefault(category, []).append(int(parts[2]))
-
-        target = ROOT / relative
-
-        if target.is_file():
-            data = read_yaml(target)
-
-            if isinstance(data, dict):
-                standard_versions.add(data.get("version"))
 
     for category, values in sorted(numbers.items()):
         values = sorted(values)
@@ -245,12 +255,33 @@ def validate_catalog_meta(
     else:
         errors.append("Missing catalog/categories.yaml")
 
-    if isinstance(version, str) and standard_versions:
-        if version not in standard_versions:
-            warnings.append(
+    if isinstance(version, str):
+        release = latest_release_version()
+
+        if release and version != release:
+            errors.append(
                 f"catalog_version {version} does not match "
-                f"standard version(s) {sorted(v for v in standard_versions if v)}"
+                f"the latest release {release}"
             )
+
+        for readme, pattern in (
+            ("README.md", r"\*\*Version:\*\*\s*(\d+\.\d+\.\d+)"),
+            ("README.zh-CN.md", r"\*\*版本：\*\*\s*(\d+\.\d+\.\d+)"),
+        ):
+            path = ROOT / readme
+
+            if not path.is_file():
+                continue
+
+            match = re.search(
+                pattern, path.read_text(encoding="utf-8")
+            )
+
+            if match and match.group(1) != version:
+                errors.append(
+                    f"{readme}: version {match.group(1)} does not match "
+                    f"catalog_version {version}"
+                )
 
 
 def skill_frontmatter(text: str, errors: list) -> dict | None:

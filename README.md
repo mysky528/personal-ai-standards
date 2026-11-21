@@ -123,6 +123,7 @@ See [`LICENSE-DOCS`](LICENSE-DOCS) for the complete mapping.
 ## Roadmap
 
 - v0.1.0: Registry, schema, Skills, validation, governance.
+- v0.1.1: Two additional Skills, Skill reference validation, coverage governance.
 - v0.2.0: Evidence records, evaluation fixtures, review.
 - v0.3.0: Search, dependency resolution, agent adapters.
 - Later: MCP server and dynamic standard distribution.
