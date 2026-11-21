@@ -1,0 +1,35 @@
+id: "PAISL-REAS-003"
+version: 0.1.0
+status: draft
+kind: "framework"
+category: "reasoning"
+name:
+  en: "OODA Decision Loop"
+  zh-CN: "OODA 决策循环"
+description:
+  en: "Support adaptive decisions through iterative feedback."
+  zh-CN: "通过迭代反馈支持适应性决策。"
+purpose:
+  en: "Support adaptive decisions through iterative feedback."
+  zh-CN: "通过迭代反馈支持适应性决策。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "OODA loop overview"
+    url: "https://en.wikipedia.org/wiki/OODA_loop"
+    type: "secondary"
+rules:
+  - id: R001
+    instruction:
+      en: "Separate observation from interpretation and reassess after action."
+      zh-CN: "区分观察与解释，并在行动后重新评估。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "Does not replace domain-specific safety controls."
+    zh-CN: "不能替代领域专用安全控制。"
+tags:
+  - "reasoning"

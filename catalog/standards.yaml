@@ -1,0 +1,26 @@
+catalog_version: 0.1.0
+standards:
+  - id: PAISL-COMM-001
+    path: standards/communication/ste-writing.yaml
+  - id: PAISL-COMM-002
+    path: standards/communication/bluf.yaml
+  - id: PAISL-COMM-003
+    path: standards/communication/google-doc-style.yaml
+  - id: PAISL-REAS-001
+    path: standards/reasoning/first-principles.yaml
+  - id: PAISL-REAS-002
+    path: standards/reasoning/mece.yaml
+  - id: PAISL-REAS-003
+    path: standards/reasoning/ooda.yaml
+  - id: PAISL-REAS-004
+    path: standards/reasoning/pyramid-principle.yaml
+  - id: PAISL-PROD-001
+    path: standards/productivity/gtd.yaml
+  - id: PAISL-VIS-001
+    path: standards/visualization/information-design.yaml
+  - id: PAISL-VIS-002
+    path: standards/visualization/visual-explanation.yaml
+  - id: PAISL-VER-001
+    path: standards/verification/fact-checking.yaml
+  - id: PAISL-ENG-001
+    path: standards/engineering/owasp-asvs.yaml

@@ -1,0 +1,35 @@
+id: "PAISL-REAS-002"
+version: 0.1.0
+status: draft
+kind: "framework"
+category: "reasoning"
+name:
+  en: "MECE Structuring"
+  zh-CN: "MECE 结构化分类"
+description:
+  en: "Organize categories with minimal overlap and omission."
+  zh-CN: "尽量减少分类之间的交叉与遗漏。"
+purpose:
+  en: "Organize categories with minimal overlap and omission."
+  zh-CN: "尽量减少分类之间的交叉与遗漏。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "MECE principle overview"
+    url: "https://en.wikipedia.org/wiki/MECE_principle"
+    type: "secondary"
+rules:
+  - id: R001
+    instruction:
+      en: "Define one classification dimension and inspect overlap and gaps."
+      zh-CN: "明确分类维度，并检查交叉和遗漏。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "Real-world categories may not be perfectly exclusive."
+    zh-CN: "现实中的类别可能无法完全互斥。"
+tags:
+  - "reasoning"

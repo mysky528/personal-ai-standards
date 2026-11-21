@@ -1,0 +1,35 @@
+id: "PAISL-COMM-001"
+version: 0.1.0
+status: draft
+kind: "practice"
+category: "communication"
+name:
+  en: "STE-Inspired Technical Writing"
+  zh-CN: "STE 启发式技术写作"
+description:
+  en: "Write technical instructions clearly and consistently."
+  zh-CN: "清晰、一致地编写技术指令。"
+purpose:
+  en: "Write technical instructions clearly and consistently."
+  zh-CN: "清晰、一致地编写技术指令。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "ASD Simplified Technical English"
+    url: "https://www.asd-ste100.org/"
+    type: "official"
+rules:
+  - id: R001
+    instruction:
+      en: "Use short sentences, consistent terminology, and explicit actions."
+      zh-CN: "使用短句、一致的术语和明确的动作描述。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "Not an official or certified ASD-STE100 implementation."
+    zh-CN: "不是 ASD-STE100 官方或认证实现。"
+tags:
+  - "communication"

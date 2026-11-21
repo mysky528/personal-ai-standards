@@ -1,0 +1,35 @@
+id: "PAISL-PROD-001"
+version: 0.1.0
+status: draft
+kind: "methodology"
+category: "productivity"
+name:
+  en: "Getting Things Done Mapping"
+  zh-CN: "GTD 任务管理方法映射"
+description:
+  en: "Manage commitments and clarify next actions."
+  zh-CN: "管理待办承诺并明确下一步行动。"
+purpose:
+  en: "Manage commitments and clarify next actions."
+  zh-CN: "管理待办承诺并明确下一步行动。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "Getting Things Done"
+    url: "https://gettingthingsdone.com/"
+    type: "official"
+rules:
+  - id: R001
+    instruction:
+      en: "Capture commitments and define concrete next actions."
+      zh-CN: "收集待办承诺，并定义具体的下一步行动。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "Not an official GTD training resource."
+    zh-CN: "不是官方 GTD 培训资料。"
+tags:
+  - "productivity"

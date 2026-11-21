@@ -1,0 +1,35 @@
+id: "PAISL-VIS-002"
+version: 0.1.0
+status: draft
+kind: "practice"
+category: "visualization"
+name:
+  en: "Progressive Visual Explanation"
+  zh-CN: "渐进式可视化解释"
+description:
+  en: "Explain difficult concepts using progressive visual steps."
+  zh-CN: "通过渐进式视觉步骤解释复杂概念。"
+purpose:
+  en: "Explain difficult concepts using progressive visual steps."
+  zh-CN: "通过渐进式视觉步骤解释复杂概念。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "3Blue1Brown"
+    url: "https://www.3blue1brown.com/"
+    type: "primary"
+rules:
+  - id: R001
+    instruction:
+      en: "Introduce visual concepts progressively and connect symbols to meaning."
+      zh-CN: "渐进引入视觉概念，并建立符号与含义的联系。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "Inspired by visual teaching; not an official 3Blue1Brown method."
+    zh-CN: "受视觉教学启发，不代表官方 3Blue1Brown 方法。"
+tags:
+  - "visualization"

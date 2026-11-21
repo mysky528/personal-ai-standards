@@ -1,0 +1,35 @@
+id: "PAISL-COMM-002"
+version: 0.1.0
+status: draft
+kind: "practice"
+category: "communication"
+name:
+  en: "Bottom Line Up Front"
+  zh-CN: "结论先行"
+description:
+  en: "Present the main conclusion before supporting detail."
+  zh-CN: "先呈现主要结论，再展开支持信息。"
+purpose:
+  en: "Present the main conclusion before supporting detail."
+  zh-CN: "先呈现主要结论，再展开支持信息。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "BLUF overview"
+    url: "https://en.wikipedia.org/wiki/BLUF_(communication)"
+    type: "secondary"
+rules:
+  - id: R001
+    instruction:
+      en: "State the main answer first, then explain evidence and caveats."
+      zh-CN: "先给出主要答案，再解释证据和限制条件。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "May be unsuitable for storytelling or exploratory dialogue."
+    zh-CN: "可能不适合叙事或探索性对话。"
+tags:
+  - "communication"

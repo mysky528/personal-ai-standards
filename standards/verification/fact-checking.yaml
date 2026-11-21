@@ -1,0 +1,35 @@
+id: "PAISL-VER-001"
+version: 0.1.0
+status: draft
+kind: "practice"
+category: "verification"
+name:
+  en: "Evidence-Aware Fact Checking"
+  zh-CN: "证据驱动的事实核验"
+description:
+  en: "Evaluate factual claims against identifiable evidence."
+  zh-CN: "根据可识别的证据核验事实性陈述。"
+purpose:
+  en: "Evaluate factual claims against identifiable evidence."
+  zh-CN: "根据可识别的证据核验事实性陈述。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "International Fact-Checking Network"
+    url: "https://www.poynter.org/ifcn/"
+    type: "official"
+rules:
+  - id: R001
+    instruction:
+      en: "Separate facts from interpretations and disclose insufficient evidence."
+      zh-CN: "区分事实与解释，并说明证据不足的情况。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "A citation alone does not prove a claim is correct."
+    zh-CN: "存在引用并不自动证明结论正确。"
+tags:
+  - "verification"

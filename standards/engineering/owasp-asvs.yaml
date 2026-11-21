@@ -1,0 +1,35 @@
+id: "PAISL-ENG-001"
+version: 0.1.0
+status: draft
+kind: "practice"
+category: "engineering"
+name:
+  en: "OWASP ASVS-Informed Security Review"
+  zh-CN: "参考 OWASP ASVS 的安全审查"
+description:
+  en: "Review application security assumptions and trust boundaries."
+  zh-CN: "审查应用安全假设和信任边界。"
+purpose:
+  en: "Review application security assumptions and trust boundaries."
+  zh-CN: "审查应用安全假设和信任边界。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "OWASP Application Security Verification Standard"
+    url: "https://owasp.org/www-project-application-security-verification-standard/"
+    type: "official"
+rules:
+  - id: R001
+    instruction:
+      en: "Identify trust boundaries and document authentication assumptions."
+      zh-CN: "识别信任边界并记录身份认证假设。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "Not an ASVS compliance checklist or certification."
+    zh-CN: "不是 ASVS 合规清单或认证。"
+tags:
+  - "engineering"

@@ -1,0 +1,35 @@
+id: "PAISL-VIS-001"
+version: 0.1.0
+status: draft
+kind: "practice"
+category: "visualization"
+name:
+  en: "Information Design"
+  zh-CN: "信息设计"
+description:
+  en: "Make visual information understandable and useful."
+  zh-CN: "使视觉信息易于理解和使用。"
+purpose:
+  en: "Make visual information understandable and useful."
+  zh-CN: "使视觉信息易于理解和使用。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "Information design overview"
+    url: "https://en.wikipedia.org/wiki/Information_design"
+    type: "secondary"
+rules:
+  - id: R001
+    instruction:
+      en: "Select visual forms based on the message and label units clearly."
+      zh-CN: "根据核心信息选择图形，并清晰标注单位。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "Design choices require contextual evaluation."
+    zh-CN: "设计选择需要结合具体场景评估。"
+tags:
+  - "visualization"

@@ -1,0 +1,35 @@
+id: "PAISL-REAS-004"
+version: 0.1.0
+status: draft
+kind: "methodology"
+category: "reasoning"
+name:
+  en: "Pyramid Principle Mapping"
+  zh-CN: "金字塔原理方法映射"
+description:
+  en: "Organize arguments around a central conclusion."
+  zh-CN: "围绕核心结论组织论证。"
+purpose:
+  en: "Organize arguments around a central conclusion."
+  zh-CN: "围绕核心结论组织论证。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "Barbara Minto — The Pyramid Principle"
+    url: "https://www.barbaraminto.com/"
+    type: "primary"
+rules:
+  - id: R001
+    instruction:
+      en: "State a governing conclusion and group supporting arguments logically."
+      zh-CN: "明确统领性结论，并按逻辑组织支持论点。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "An original summary, not a reproduction of the book."
+    zh-CN: "原创摘要，不是原著的复制。"
+tags:
+  - "reasoning"

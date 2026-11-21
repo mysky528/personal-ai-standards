@@ -1,0 +1,19 @@
+categories:
+  communication:
+    en: Communication
+    zh-CN: 沟通表达
+  reasoning:
+    en: Reasoning
+    zh-CN: 结构化思考
+  productivity:
+    en: Productivity
+    zh-CN: 生产力管理
+  visualization:
+    en: Visualization
+    zh-CN: 可视化表达
+  verification:
+    en: Verification
+    zh-CN: 事实核验
+  engineering:
+    en: Engineering
+    zh-CN: 工程实践

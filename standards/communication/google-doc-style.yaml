@@ -1,0 +1,35 @@
+id: "PAISL-COMM-003"
+version: 0.1.0
+status: draft
+kind: "style_guide"
+category: "communication"
+name:
+  en: "Google Developer Documentation Style Mapping"
+  zh-CN: "Google 开发者文档风格映射"
+description:
+  en: "Improve the clarity of developer documentation."
+  zh-CN: "提高开发者文档的清晰度。"
+purpose:
+  en: "Improve the clarity of developer documentation."
+  zh-CN: "提高开发者文档的清晰度。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "Google Developer Documentation Style Guide"
+    url: "https://developers.google.com/style"
+    type: "official"
+rules:
+  - id: R001
+    instruction:
+      en: "Use descriptive headings and explain prerequisites before steps."
+      zh-CN: "使用描述性标题，并在步骤之前说明前置条件。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "This mapping is not an official Google publication."
+    zh-CN: "本映射不是 Google 官方出版物。"
+tags:
+  - "communication"

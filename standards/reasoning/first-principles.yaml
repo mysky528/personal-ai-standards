@@ -1,0 +1,35 @@
+id: "PAISL-REAS-001"
+version: 0.1.0
+status: draft
+kind: "methodology"
+category: "reasoning"
+name:
+  en: "First-Principles Reasoning"
+  zh-CN: "第一性原理思考"
+description:
+  en: "Reason from fundamental assumptions and constraints."
+  zh-CN: "从基础假设和约束出发进行推理。"
+purpose:
+  en: "Reason from fundamental assumptions and constraints."
+  zh-CN: "从基础假设和约束出发进行推理。"
+scope:
+  en: "Relevant human-AI tasks and knowledge artifacts."
+  zh-CN: "相关人机协作任务与知识成果。"
+sources:
+  - title: "First principle overview"
+    url: "https://en.wikipedia.org/wiki/First_principle"
+    type: "secondary"
+rules:
+  - id: R001
+    instruction:
+      en: "Identify assumptions and distinguish constraints from conventions."
+      zh-CN: "识别假设，并区分客观约束和惯例。"
+    rationale:
+      en: "Improve clarity, reliability, and consistency."
+      zh-CN: "提高表达清晰度、可靠性和一致性。"
+    severity: should
+limitations:
+  - en: "Fundamental assumptions can themselves be incorrect."
+    zh-CN: "基础假设本身也可能存在错误。"
+tags:
+  - "reasoning"
