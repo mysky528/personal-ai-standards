@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # PAISL v0.1.0 用户使用手册
 
 > Personal AI Standards Library · User Guide  
@@ -29,13 +30,13 @@ PAISL **不是**大模型、自动化工作流引擎、通用提示词市场或�
 
 ### 1.2 五个关键概念
 
-| 概念 | 含义 | 位置 |
-|---|---|---|
-| Standard | 有 ID、版本、规则、来源和局限的规范条目 | `standards/**/*.yaml` |
-| Catalog | 标准 ID 到文件路径的索引 | `catalog/standards.yaml` |
-| Schema | 约束标准 YAML 数据结构的契约 | `schemas/standard.schema.json` |
-| Skill | 告诉 Agent 如何在任务中使用标准的操作流程 | `skills/*/SKILL.md` |
-| Validator | 检查 Schema、目录、ID 等结构一致性的脚本 | `scripts/validate.py` |
+| 概念        | 含义                        | 位置                             |
+| --------- | ------------------------- | ------------------------------ |
+| Standard  | 有 ID、版本、规则、来源和局限的规范条目     | `standards/**/*.yaml`          |
+| Catalog   | 标准 ID 到文件路径的索引            | `catalog/standards.yaml`       |
+| Schema    | 约束标准 YAML 数据结构的契约         | `schemas/standard.schema.json` |
+| Skill     | 告诉 Agent 如何在任务中使用标准的操作流程  | `skills/*/SKILL.md`            |
+| Validator | 检查 Schema、目录、ID 等结构一致性的脚本 | `scripts/validate.py`          |
 
 **关键区别**：Standard 规定“应遵循什么”，Skill 规定“如何在任务中使用”。一个 Skill 可以引用多个 Standard；一个 Standard 也可以被多个 Skill 使用。
 
@@ -170,20 +171,20 @@ ID 格式为 `PAISL-<CATEGORY>-<NUMBER>`，例如 `PAISL-COMM-001`。分类前�
 
 ### 3.3 12 个初始标准
 
-| ID | 标准/实践 | 文件 |
-|---|---|---|
-| PAISL-COMM-001 | STE 启发式技术写作 | `standards/communication/ste-writing.yaml` |
-| PAISL-COMM-002 | BLUF 结论先行 | `standards/communication/bluf.yaml` |
-| PAISL-COMM-003 | Google 开发者文档风格映射 | `standards/communication/google-doc-style.yaml` |
-| PAISL-REAS-001 | 第一性原理 | `standards/reasoning/first-principles.yaml` |
-| PAISL-REAS-002 | MECE | `standards/reasoning/mece.yaml` |
-| PAISL-REAS-003 | OODA | `standards/reasoning/ooda.yaml` |
-| PAISL-REAS-004 | 金字塔原理 | `standards/reasoning/pyramid-principle.yaml` |
-| PAISL-PROD-001 | GTD | `standards/productivity/gtd.yaml` |
-| PAISL-VIS-001 | 信息设计 | `standards/visualization/information-design.yaml` |
-| PAISL-VIS-002 | 渐进式可视化解释 | `standards/visualization/visual-explanation.yaml` |
-| PAISL-VER-001 | 证据驱动事实核验 | `standards/verification/fact-checking.yaml` |
-| PAISL-ENG-001 | OWASP ASVS 启发式安全审查 | `standards/engineering/owasp-asvs.yaml` |
+| ID             | 标准/实践              | 文件                                                |
+| -------------- | ------------------ | ------------------------------------------------- |
+| PAISL-COMM-001 | STE 启发式技术写作        | `standards/communication/ste-writing.yaml`        |
+| PAISL-COMM-002 | BLUF 结论先行          | `standards/communication/bluf.yaml`               |
+| PAISL-COMM-003 | Google 开发者文档风格映射   | `standards/communication/google-doc-style.yaml`   |
+| PAISL-REAS-001 | 第一性原理              | `standards/reasoning/first-principles.yaml`       |
+| PAISL-REAS-002 | MECE               | `standards/reasoning/mece.yaml`                   |
+| PAISL-REAS-003 | OODA               | `standards/reasoning/ooda.yaml`                   |
+| PAISL-REAS-004 | 金字塔原理              | `standards/reasoning/pyramid-principle.yaml`      |
+| PAISL-PROD-001 | GTD                | `standards/productivity/gtd.yaml`                 |
+| PAISL-VIS-001  | 信息设计               | `standards/visualization/information-design.yaml` |
+| PAISL-VIS-002  | 渐进式可视化解释           | `standards/visualization/visual-explanation.yaml` |
+| PAISL-VER-001  | 证据驱动事实核验           | `standards/verification/fact-checking.yaml`       |
+| PAISL-ENG-001  | OWASP ASVS 启发式安全审查 | `standards/engineering/owasp-asvs.yaml`           |
 
 ### 3.4 YAML 字段说明
 
@@ -212,13 +213,13 @@ find standards -type f -name '*.yaml' | sort
 
 v0.1.0 的 Skill 是仓库中的 Markdown 操作说明，**不是**安装后就能自动运行的可执行程序。Agent 需要能够读取对应文件，并根据其步骤完成任务。具体是否自动发现 `SKILL.md`，取决于 Agent Runtime 的实现和配置。
 
-| Skill | 使用时机 | 引用标准 | 预期产物 |
-|---|---|---|---|
-| `standard-discovery` | 不确定选哪个标准 | Catalog 中相关标准 | 候选 ID、适用性、局限 |
-| `ste-writing` | 优化技术写作 | COMM-001、COMM-003 | 修改文本、变更说明、歧义 |
-| `structured-thinking` | 拆解复杂问题 | REAS-001/002/003/004、COMM-002 | 分析结构、选项、结论 |
-| `ai-output-review` | 审查 AI 输出 | VER-001、COMM-001/002、REAS-002 | 问题清单、修订建议 |
-| `visual-explanation` | 规划视觉讲解 | VIS-001、VIS-002 | 分镜、标注、说明 |
+| Skill                 | 使用时机     | 引用标准                          | 预期产物         |
+| --------------------- | -------- | ----------------------------- | ------------ |
+| `standard-discovery`  | 不确定选哪个标准 | Catalog 中相关标准                 | 候选 ID、适用性、局限 |
+| `ste-writing`         | 优化技术写作   | COMM-001、COMM-003             | 修改文本、变更说明、歧义 |
+| `structured-thinking` | 拆解复杂问题   | REAS-001/002/003/004、COMM-002 | 分析结构、选项、结论   |
+| `ai-output-review`    | 审查 AI 输出 | VER-001、COMM-001/002、REAS-002 | 问题清单、修订建议    |
+| `visual-explanation`  | 规划视觉讲解   | VIS-001、VIS-002               | 分镜、标注、说明     |
 
 表中省略了重复的 `PAISL-` 前缀。
 
@@ -561,17 +562,17 @@ python scripts/validate.py
 
 ### 8.3 常见问题
 
-| 现象 | 可能原因 | 处理方法 |
-|---|---|---|
-| `ModuleNotFoundError: yaml` | 未安装 PyYAML | 激活虚拟环境并安装依赖 |
-| `ModuleNotFoundError: jsonschema` | 未安装 jsonschema | 运行 `pip install -r requirements-dev.txt` |
-| `Missing standard file` | Catalog 路径错误 | 对照真实路径修正 `path` |
-| `Uncataloged standard` | 新 YAML 未加入 Catalog | 添加 Catalog 条目 |
-| `ID/category mismatch` | ID 前缀与分类不一致 | 检查 `id` 和 `category` |
-| `duplicate rule IDs` | 同一标准内重复规则 ID | 重新分配 `R001` 等编号 |
-| `Validation FAILED` | 一个或多个结构错误 | 阅读全部 `ERROR:` 行并逐项修正 |
-| Agent 找不到 Skill | 工作目录或读取权限问题 | 显式提供文件路径，确认 Runtime 可读取 |
-| Agent 编造规则 | 未读取标准文件 | 要求逐项报告已读取的文件和标准 ID |
+| 现象                                | 可能原因               | 处理方法                                     |
+| --------------------------------- | ------------------ | ---------------------------------------- |
+| `ModuleNotFoundError: yaml`       | 未安装 PyYAML         | 激活虚拟环境并安装依赖                              |
+| `ModuleNotFoundError: jsonschema` | 未安装 jsonschema     | 运行 `pip install -r requirements-dev.txt` |
+| `Missing standard file`           | Catalog 路径错误       | 对照真实路径修正 `path`                          |
+| `Uncataloged standard`            | 新 YAML 未加入 Catalog | 添加 Catalog 条目                            |
+| `ID/category mismatch`            | ID 前缀与分类不一致        | 检查 `id` 和 `category`                     |
+| `duplicate rule IDs`              | 同一标准内重复规则 ID       | 重新分配 `R001` 等编号                          |
+| `Validation FAILED`               | 一个或多个结构错误          | 阅读全部 `ERROR:` 行并逐项修正                     |
+| Agent 找不到 Skill                   | 工作目录或读取权限问题        | 显式提供文件路径，确认 Runtime 可读取                  |
+| Agent 编造规则                        | 未读取标准文件            | 要求逐项报告已读取的文件和标准 ID                       |
 
 ### 8.4 不属于本版本校验范围的事项
 
@@ -677,7 +678,3 @@ grep -R 'PAISL-COMM-001' catalog standards skills
 # 查看 Git 状态
 git status
 ```
-
-## 附录 B：维护建议
-
-建议将本文件存放于 `docs/user-guide/USER_GUIDE.zh-CN.md`，并在仓库根目录 `README.zh-CN.md` 增加链接。后续英文版可使用 `docs/user-guide/USER_GUIDE.md`。手册的增补不应改变 v0.1.0 的标准数据契约；如果操作流程与实际仓库不一致，应先记录差异并进行审查。
