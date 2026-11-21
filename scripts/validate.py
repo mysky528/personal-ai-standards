@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """PAISL v0.1.0 standard registry validator."""
 
 from __future__ import annotations

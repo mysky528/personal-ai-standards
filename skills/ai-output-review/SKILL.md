@@ -4,6 +4,7 @@ description: Review AI output for clarity, evidence, and consistency.
 version: 0.1.0
 ---
 
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # ai-output-review
 
 ## Purpose / 目的

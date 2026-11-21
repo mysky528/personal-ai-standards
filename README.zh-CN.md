@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # 个人 AI 标准库（PAISL）
 
 面向人类与 AI Agent 的开放、双语、机器可读标准与实践库。
@@ -53,11 +54,22 @@ Agent 首先读取 `AGENTS.md`，选择合适的 Skill，
 
 ## 许可证
 
-原创代码采用 MIT。
+PAISL 采用拆分许可。
 
-原创文档、Skills 和标准摘要采用 CC BY 4.0。
+| 范围 | 许可 | 全文 |
+|---|---|---|
+| 软件部分：`scripts/`、`schemas/`、`catalog/`、`.github/`、配置文件 | MIT | [`LICENSE`](LICENSE) |
+| 原创文档：`docs/` 与根目录 `*.md` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
+| Agent Skills：`skills/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
+| 原创标准摘要：`standards/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
 
-第三方标准遵循原有版权与许可。
+每个受许可目录内含独立的 `LICENSE` 文件，每个文件以 SPDX 标识声明自身许可。
+
+复用 CC BY 4.0 材料时必须署名并注明修改。
+
+第三方标准遵循原有版权与许可。PAISL 摘要为独立撰写的说明，不授予其所引用标准的任何权利。
+
+完整对应关系参见 [`LICENSE-DOCS`](LICENSE-DOCS)。
 
 ## 路线图
 

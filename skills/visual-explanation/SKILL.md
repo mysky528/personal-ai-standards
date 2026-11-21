@@ -4,6 +4,7 @@ description: Plan progressive visual explanations for complex ideas.
 version: 0.1.0
 ---
 
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # visual-explanation
 
 ## Purpose / 目的

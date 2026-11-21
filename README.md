@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Personal AI Standards Library (PAISL)
 
 An open, bilingual, machine-readable library of standards
@@ -70,12 +71,26 @@ All v0.1.0 entries start as `draft`.
 
 ## Licensing
 
-Original software: MIT.
+PAISL uses a split license.
 
-Original documentation, Skills, and summaries:
-CC BY 4.0.
+| Scope | License | Full text |
+|---|---|---|
+| Software: `scripts/`, `schemas/`, `catalog/`, `.github/`, config | MIT | [`LICENSE`](LICENSE) |
+| Original documentation: `docs/`, root `*.md` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
+| Agent Skills: `skills/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
+| Original standard summaries: `standards/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
 
-Third-party standards retain their own licenses.
+Each licensed directory carries its own `LICENSE` file, and each file
+declares its license with an SPDX identifier.
+
+Reusing CC BY 4.0 material requires attribution and indication of
+changes.
+
+Third-party standards retain their own licenses. A PAISL summary is
+an independently written description and grants no rights to the
+standard it references.
+
+See [`LICENSE-DOCS`](LICENSE-DOCS) for the complete mapping.
 
 ## Roadmap
 

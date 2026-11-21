@@ -1,15 +1,48 @@
-Documentation License Notice
+PAISL Licensing Notice / PAISL 许可说明
+=====================================
 
-Original PAISL documentation, Skills, examples, and original
-standard summaries are licensed under Creative Commons
-Attribution 4.0 International (CC BY 4.0).
+This file is an index. It states which license applies to which
+part of the repository. It is not the license text itself.
+
+Original documentation, Agent Skills, and original standard summaries
+are licensed under the Creative Commons Attribution 4.0 International
+License (CC BY 4.0).
 
 SPDX-License-Identifier: CC-BY-4.0
 
-Full legal text:
-https://creativecommons.org/licenses/by/4.0/legalcode
+Where the license applies
+-------------------------
 
-Attribution and indication of changes are required.
+| Path                            | License | Scope                              |
+|---|---|---|
+| `docs/`                         | CC BY 4.0 | Original documentation           |
+| `skills/`                       | CC BY 4.0 | Original Agent Skills            |
+| `standards/`                    | CC BY 4.0 | Original standard summaries      |
+| `*.md` in the repository root   | CC BY 4.0 | Original documentation           |
+| `scripts/`, `schemas/`, `catalog/`, `.github/`, config files | MIT | Software components |
 
-Third-party standards, trademarks, and externally owned
-materials are not relicensed by this notice.
+Per-directory `LICENSE` files apply to every file in the directory
+in which they appear. Individual files additionally declare their
+license with an SPDX identifier.
+
+Full license text
+-----------------
+
+The complete CC BY 4.0 legal code is reproduced in the repository
+root file `LICENSE-CC-BY-4.0` and is published at:
+
+https://creativecommons.org/licenses/by/4.0/legalcode.txt
+
+The MIT license text is reproduced in the repository root file
+`LICENSE`.
+
+Obligations
+-----------
+
+Attribution and indication of changes are required when reusing
+CC BY 4.0 licensed material.
+
+Third-party standards, trademarks, and externally owned materials
+are not relicensed by PAISL. A PAISL summary is an independently
+written description and does not grant any rights to the standard
+it references.

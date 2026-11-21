@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 ---
 name: Standard proposal
 about: Propose a new PAISL standard mapping

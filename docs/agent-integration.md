@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Agent Integration / Agent 集成
 
 ## v0.1.0

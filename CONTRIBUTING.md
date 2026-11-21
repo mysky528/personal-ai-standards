@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Contributing to PAISL / 贡献指南
 
 ## Contributions / 贡献类型
@@ -47,6 +48,17 @@ Reviewers must evaluate:
 Original code contributions: MIT.
 
 Original documentation contributions: CC BY 4.0.
+
+The license of a new file is determined by its location and by the
+SPDX identifier in its header:
+
+- `scripts/`, `schemas/`, `catalog/`, `.github/`: MIT.
+- `docs/`, `skills/`, `standards/`, and root `*.md`: CC BY 4.0.
+
+Add `SPDX-License-Identifier: MIT` or
+`SPDX-License-Identifier: CC-BY-4.0` to every new file that supports
+comments, matching the license of its directory. JSON files cannot
+carry inline comments and inherit the license of their directory.
 
 Do not submit third-party material without
 the necessary redistribution rights.

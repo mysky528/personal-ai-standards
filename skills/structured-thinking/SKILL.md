@@ -4,6 +4,7 @@ description: Decompose complex problems and organize reasoning.
 version: 0.1.0
 ---
 
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # structured-thinking
 
 ## Purpose / 目的

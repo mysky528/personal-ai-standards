@@ -4,6 +4,7 @@ description: Discover relevant PAISL standards for a task.
 version: 0.1.0
 ---
 
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # standard-discovery
 
 ## Purpose / 目的

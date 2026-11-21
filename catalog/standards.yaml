@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 catalog_version: 0.1.0
 standards:
   - id: PAISL-COMM-001

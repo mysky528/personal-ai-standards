@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 # PAISL v0.1.0 development dependencies
 
 PyYAML>=6.0,<7.0

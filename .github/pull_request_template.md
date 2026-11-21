@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 ## Summary / 摘要
 
 ## Affected standards / 涉及标准

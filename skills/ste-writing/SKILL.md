@@ -4,6 +4,7 @@ description: Rewrite technical content for clarity and consistency.
 version: 0.1.0
 ---
 
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # ste-writing
 
 ## Purpose / 目的
