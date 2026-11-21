@@ -29,6 +29,7 @@ PAISL is not merely a prompt collection.
 | `catalog/` | Standard discovery registry |
 | `scripts/` | Structural validation |
 | `docs/` | Architecture and governance |
+| `docs/user-guide/` | [User guide (Simplified Chinese)](docs/user-guide/USER_GUIDE.zh-CN.md) |
 | `.github/` | CI and contribution workflows |
 
 

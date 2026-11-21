@@ -28,6 +28,7 @@ PAISL 解决两个核心问题：
 - `catalog/`：标准发现目录。
 - `scripts/`：结构化校验。
 - `docs/`：架构、治理与集成说明。
+- `docs/user-guide/`：[中文用户手册](docs/user-guide/USER_GUIDE.zh-CN.md)。
 - `AGENTS.md`：Agent 行为契约。
 
 
