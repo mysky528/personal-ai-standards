@@ -91,9 +91,17 @@ def test_invalid_arguments_exit_with_usage_code(repo_copy):
 
 def test_unknown_command_is_rejected(repo_copy):
     """Only implemented commands are exposed."""
-    result = _cli(repo_copy, "coverage")
+    result = _cli(repo_copy, "evaluate")
 
     assert result.returncode == EXIT_USAGE
+
+
+def test_coverage_command_is_available(repo_copy):
+    """The coverage command reports without failing the build."""
+    result = _cli(repo_copy, "coverage")
+
+    assert result.returncode == EXIT_SUCCESS
+    assert "PAISL Coverage Report" in result.stdout
 
 
 def test_strict_mode_promotes_warnings(repo_copy):

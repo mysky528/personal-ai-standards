@@ -36,6 +36,9 @@ jobs:
       - name: Validate through the CLI
         run: python -m paisl validate
 
+      - name: Report coverage
+        run: python -m paisl coverage
+
       - name: Run the test suite
         run: python -m pytest
 

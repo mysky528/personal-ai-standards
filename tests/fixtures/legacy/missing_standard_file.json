@@ -1,5 +1,7 @@
 {
   "spdx": "SPDX-License-Identifier: MIT",
   "exit_code": 1,
-  "stdout": "\n=== PAISL Validation Report ===\nStandards checked: 11\nSkills checked: 7\nErrors: 4\nWarnings: 0\nERROR: Missing standard file: standards/communication/missing.yaml\nERROR: Uncataloged standard: standards/communication/bluf.yaml\nERROR: skills/ai-output-review/SKILL.md: referenced standard file missing: standards/communication/missing.yaml\nERROR: skills/structured-thinking/SKILL.md: referenced standard file missing: standards/communication/missing.yaml\n\nValidation FAILED\n"
+  "stdout": "\n=== PAISL Validation Report ===\nStandards checked: 11\nSkills checked: 7\nErrors: 5\nWarnings: 0\nERROR: Missing standard file: standards/communication/missing.yaml\nERROR: Uncataloged standard: standards/communication/bluf.yaml\nERROR: skills/ai-output-review/SKILL.md: referenced standard file missing: standards/communication/missing.yaml\nERROR: skills/structured-thinking/SKILL.md: referenced standard file missing: standards/communication/missing.yaml\nERROR: governance/conflicts/CONFLICT-0001.yaml: unknown rule reference: R001\n\nValidation FAILED\n",
+  "provenance": "extended",
+  "note": "The v0.2.0 records add one finding to the legacy output; the baseline findings are preserved."
 }

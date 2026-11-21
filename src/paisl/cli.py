@@ -24,11 +24,23 @@ from .errors import (
     EXIT_VALIDATION,
     PaislError,
 )
-from .coverage import validate_skills
+from .coverage import build_coverage, validate_skills
 from .licensing import validate_license_scope
 from .paths import find_repo_root
-from .registry import load_catalog, validate_catalog_meta, validate_standards
-from .reporting import render_json_report, render_text_report
+from .registry import (
+    build_standard_index,
+    load_catalog,
+    load_records,
+    resolve_references,
+    validate_catalog_meta,
+    validate_standards,
+)
+from .reporting import (
+    render_coverage_json,
+    render_coverage_text,
+    render_json_report,
+    render_text_report,
+)
 from .schema_validation import build_validator
 
 
@@ -75,6 +87,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Treat warnings as failures.",
     )
 
+    coverage_parser = subparsers.add_parser(
+        "coverage",
+        help="Report how completely the repository is covered.",
+    )
+    coverage_parser.add_argument(
+        "--repo",
+        type=Path,
+        default=None,
+        help="Repository root. Defaults to the current directory.",
+    )
+    coverage_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Report format.",
+    )
+    coverage_parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Write the report to this file instead of standard output.",
+    )
+
     return parser
 
 
@@ -109,7 +144,29 @@ def run_validation(root: Path) -> tuple[list, list, int, int]:
 
     validate_license_scope(root, errors)
 
+    # v0.2.0 extends the baseline checks with the governance and
+    # evaluation records. The original checks keep their behaviour and
+    # their order; the records are reported only when they are wrong.
+    records = load_records(root, errors)
+    resolve_references(
+        root, records, build_standard_index(root, catalog), errors
+    )
+
     return errors, warnings, standards_checked, skills_checked
+
+
+def run_coverage(root: Path) -> dict:
+    """Collect the coverage report."""
+    schema = json.loads(
+        (root / "schemas" / "standard.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    catalog = load_catalog(root)
+    errors: list = []
+    records = load_records(root, errors)
+
+    return build_coverage(root, schema, catalog, records)
 
 
 def _write_report(report: str, output: Path | None) -> None:
@@ -152,6 +209,27 @@ def _run_validate(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def _run_coverage(args: argparse.Namespace) -> int:
+    try:
+        root = args.repo.resolve() if args.repo else find_repo_root()
+        coverage = run_coverage(root)
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        print(f"ERROR: Initialization failed: {exc}")
+        return EXIT_VALIDATION
+    except PaislError as exc:
+        print(f"ERROR: {exc}")
+        return exc.exit_code
+
+    if args.format == "json":
+        report = render_coverage_json(coverage)
+    else:
+        report = render_coverage_text(coverage)
+
+    _write_report(report, args.output)
+
+    return EXIT_SUCCESS
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the command line interface."""
     parser = build_parser()
@@ -159,6 +237,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "validate":
         return _run_validate(args)
+
+    if args.command == "coverage":
+        return _run_coverage(args)
 
     parser.error(f"Unknown command: {args.command}")
 

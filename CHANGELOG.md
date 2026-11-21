@@ -12,6 +12,7 @@ implemented yet.
 ### Added
 - `paisl` Python package with a `src/` layout and a `pyproject.toml`
 - `python -m paisl validate` command with text and JSON reports
+- `python -m paisl coverage` command with text and JSON reports
 - `paisl` console script entry point
 - Test suite covering validator equivalence and CLI behaviour
 - Data contracts for evidence records, rule evidence links,
@@ -25,6 +26,8 @@ implemented yet.
   the `paisl` package
 - `scripts/validate.py` is now a compatibility wrapper that resolves
   the package from the repository source tree
+- The validator now also checks the v0.2.0 records. The v0.1.x
+  baseline checks keep their behaviour and their order.
 
 ### Compatibility
 - `python scripts/validate.py` keeps the same output and exit codes

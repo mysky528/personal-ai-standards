@@ -95,6 +95,39 @@ The contracts constrain the shape of a record. Whether a referenced
 Standard, rule, evidence record, or evaluation case exists is a
 referential integrity question that the validator answers.
 
+### Additional checks (v0.2.0)
+
+The v0.2.0 validator extends the v0.1.x baseline. The baseline
+checks keep their behaviour and their order, so a repository that
+passed before still passes. The following checks are new, and they
+report only when a record is wrong:
+
+- every governance and evaluation record is validated against its
+  contract
+- a record that refers to a Standard, rule, evidence record, or
+  evaluation case that does not exist is reported
+- an evaluation case whose fixture points outside the repository, or
+  at a file that is missing, is reported
+- a record in a known directory with an unknown identifier prefix is
+  reported
+
+`python scripts/validate.py` and `python -m paisl validate` run the
+same checks. The compatibility wrapper keeps the v0.1.x command
+contract, including its output format.
+
+### Coverage report
+
+`python -m paisl coverage` describes how completely the repository is
+covered. It reports standards without a Skill reference, without
+evidence links, without evaluation cases, without a lifecycle
+review, or without a semantic review, together with the skills that
+refer to no standard, the evidence records that no rule links, and
+the conflicts that block a promotion.
+
+A standard without a Skill reference is reported, never failed. A
+standard may be intended for direct use, and the coverage policy
+says that a missing reference is not automatically an error.
+
 ### Command line interface
 
 Only the `validate` command exists so far.

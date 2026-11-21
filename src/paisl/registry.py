@@ -9,6 +9,7 @@ covered by the Standard Schema.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -18,6 +19,7 @@ from .schema_validation import (
     append_rule_id_errors,
     append_schema_errors,
     append_source_url_errors,
+    build_validator,
 )
 
 # Category to identifier prefix, per the Standard Schema.
@@ -40,6 +42,306 @@ README_VERSION_PATTERNS = (
     ("README.md", r"\*\*Version:\*\*\s*(\d+\.\d+\.\d+)"),
     ("README.zh-CN.md", r"\*\*版本：\*\*\s*(\d+\.\d+\.\d+)"),
 )
+
+
+@dataclass(frozen=True)
+class Record:
+    """A governance or evaluation record loaded from the repository."""
+
+    kind: str
+    relative: str
+    path: Path
+    data: dict
+
+    @property
+    def id(self) -> str | None:
+        """Return the record identifier when the contract defines one."""
+        value = self.data.get("id")
+        return value if isinstance(value, str) else None
+
+    @property
+    def standard_id(self) -> str | None:
+        """Return the Standard this record refers to."""
+        value = self.data.get("standard_id")
+        return value if isinstance(value, str) else None
+
+
+@dataclass(frozen=True)
+class RecordLocation:
+    """Where a kind of record lives and which contract it uses."""
+
+    directory: str
+    schemas: dict = field(default_factory=dict)
+    default_schema: str | None = None
+
+    def schema_for(self, identifier: object) -> str | None:
+        """Return the contract that applies to a record identifier."""
+        if isinstance(identifier, str):
+            for prefix, schema in self.schemas.items():
+                if identifier.startswith(prefix):
+                    return schema
+
+        return self.default_schema
+
+
+RECORD_LOCATIONS = (
+    RecordLocation(
+        "evidence/records",
+        {"EVD-": "evidence.schema.json"},
+    ),
+    RecordLocation(
+        "evidence/links",
+        default_schema="rule-evidence.schema.json",
+    ),
+    RecordLocation(
+        "governance/reviews",
+        {
+            "REV-": "review.schema.json",
+            "SEM-": "semantic-review.schema.json",
+        },
+    ),
+    RecordLocation(
+        "governance/conflicts",
+        {"CONFLICT-": "conflict.schema.json"},
+    ),
+    RecordLocation(
+        "evaluations/cases",
+        default_schema="evaluation-case.schema.json",
+    ),
+    RecordLocation(
+        "evaluations/suites",
+        default_schema="evaluation-suite.schema.json",
+    ),
+)
+
+
+def build_standard_index(root: Path, catalog: dict) -> dict:
+    """Index every Catalog entry by ID with its rules and version."""
+    index: dict = {}
+
+    for entry in catalog.get("standards", []):
+        if not isinstance(entry, dict):
+            continue
+
+        sid = entry.get("id")
+        relative = entry.get("path")
+
+        if not isinstance(sid, str) or not isinstance(relative, str):
+            continue
+
+        rule_ids: list = []
+        version = None
+        path = root / relative
+
+        if path.is_file():
+            data = read_yaml(path)
+
+            if isinstance(data, dict):
+                version = data.get("version")
+                rule_ids = [
+                    rule.get("id")
+                    for rule in data.get("rules", [])
+                    if isinstance(rule, dict)
+                ]
+
+        index[sid] = {
+            "path": relative,
+            "version": version,
+            "rule_ids": rule_ids,
+        }
+
+    return index
+
+
+def load_records(root: Path, errors: list) -> list:
+    """Load every governance and evaluation record in the repository."""
+    records: list = []
+    validators: dict = {}
+
+    for location in RECORD_LOCATIONS:
+        directory = root / location.directory
+
+        if not directory.is_dir():
+            continue
+
+        for path in sorted(directory.glob("*.yaml")):
+            relative = path.relative_to(root).as_posix()
+
+            try:
+                data = read_yaml(path)
+            except (OSError, yaml.YAMLError) as exc:
+                errors.append(f"{relative}: YAML error: {exc}")
+                continue
+
+            if not isinstance(data, dict):
+                errors.append(f"{relative}: expected YAML mapping")
+                continue
+
+            schema_name = location.schema_for(data.get("id"))
+
+            if schema_name is None:
+                errors.append(f"{relative}: unknown record kind")
+                continue
+
+            if schema_name not in validators:
+                schema = read_yaml(root / "schemas" / schema_name)
+                validators[schema_name] = build_validator(schema)
+
+            append_schema_errors(
+                data, validators[schema_name], relative, errors
+            )
+
+            records.append(
+                Record(
+                    kind=schema_name.replace(".schema.json", ""),
+                    relative=relative,
+                    path=path,
+                    data=data,
+                )
+            )
+
+    return records
+
+
+def _rule_ids_of(standard_index: dict, sid: object) -> list:
+    entry = standard_index.get(sid) if isinstance(sid, str) else None
+
+    if not entry:
+        return []
+
+    return entry["rule_ids"]
+
+
+def resolve_references(
+    root: Path,
+    records: list,
+    standard_index: dict,
+    errors: list,
+) -> None:
+    """Check that every record refers to records that exist."""
+    evidence_ids = {
+        record.id
+        for record in records
+        if record.kind == "evidence" and record.id
+    }
+    case_ids = {
+        record.id
+        for record in records
+        if record.kind == "evaluation-case" and record.id
+    }
+
+    for record in records:
+        data = record.data
+        relative = record.relative
+
+        if record.kind == "rule-evidence":
+            sid = data.get("standard_id")
+
+            if isinstance(sid, str) and sid not in standard_index:
+                errors.append(
+                    f"{relative}: unknown standard reference: {sid}"
+                )
+
+            for rule in data.get("rules", []):
+                if not isinstance(rule, dict):
+                    continue
+
+                rule_id = rule.get("rule_id")
+
+                if rule_id not in _rule_ids_of(standard_index, sid):
+                    errors.append(
+                        f"{relative}: unknown rule reference: {rule_id}"
+                    )
+
+                for link in rule.get("evidence", []):
+                    if not isinstance(link, dict):
+                        continue
+
+                    evidence_id = link.get("evidence_id")
+
+                    if evidence_id not in evidence_ids:
+                        errors.append(
+                            f"{relative}: unknown evidence reference: "
+                            f"{evidence_id}"
+                        )
+
+        elif record.kind in ("review", "semantic-review"):
+            sid = data.get("standard_id")
+
+            if isinstance(sid, str) and sid not in standard_index:
+                errors.append(
+                    f"{relative}: unknown standard reference: {sid}"
+                )
+
+            for evidence_id in data.get("evidence_ids", []):
+                if evidence_id not in evidence_ids:
+                    errors.append(
+                        f"{relative}: unknown evidence reference: "
+                        f"{evidence_id}"
+                    )
+
+        elif record.kind == "conflict":
+            for rule in data.get("rules", []):
+                if not isinstance(rule, dict):
+                    continue
+
+                sid = rule.get("standard_id")
+                rule_id = rule.get("rule_id")
+
+                if isinstance(sid, str) and sid not in standard_index:
+                    errors.append(
+                        f"{relative}: unknown standard reference: {sid}"
+                    )
+
+                if rule_id not in _rule_ids_of(standard_index, sid):
+                    errors.append(
+                        f"{relative}: unknown rule reference: {rule_id}"
+                    )
+
+        elif record.kind == "evaluation-case":
+            sid = data.get("standard_id")
+
+            if isinstance(sid, str) and sid not in standard_index:
+                errors.append(
+                    f"{relative}: unknown standard reference: {sid}"
+                )
+
+            known_rules = _rule_ids_of(standard_index, sid)
+
+            for rule_id in data.get("rule_ids", []):
+                if rule_id not in known_rules:
+                    errors.append(
+                        f"{relative}: unknown rule reference: {rule_id}"
+                    )
+
+            fixture = data.get("fixture", {})
+
+            if isinstance(fixture, dict):
+                for key in ("input", "output"):
+                    target = fixture.get(key)
+
+                    if not isinstance(target, str):
+                        continue
+
+                    resolved = (root / target).resolve()
+
+                    if not resolved.is_relative_to(root.resolve()):
+                        errors.append(
+                            f"{relative}: fixture path escapes the "
+                            f"repository: {target}"
+                        )
+                    elif not resolved.is_file():
+                        errors.append(
+                            f"{relative}: fixture file missing: {target}"
+                        )
+
+        elif record.kind == "evaluation-suite":
+            for case_id in data.get("cases", []):
+                if case_id not in case_ids:
+                    errors.append(
+                        f"{relative}: unknown evaluation case reference: "
+                        f"{case_id}"
+                    )
 
 
 def latest_release_version(root: Path) -> str | None:

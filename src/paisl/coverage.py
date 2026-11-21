@@ -242,3 +242,173 @@ def validate_skill_docs(
 
         for name in sorted(directories - listed):
             warnings.append(f"{relative}: Skill not listed: {name}")
+
+
+def skill_reference_map(root: Path, id_pattern: re.Pattern) -> dict:
+    """Map every Skill to the Standard IDs it references."""
+    skills_root = root / "skills"
+    mapping: dict = {}
+
+    if not skills_root.is_dir():
+        return mapping
+
+    for path in sorted(skills_root.glob("*/SKILL.md")):
+        if not path.is_file():
+            continue
+
+        text = path.read_text(encoding="utf-8")
+        mapping[path.parent.name] = referenced_standard_ids(text, id_pattern)
+
+    return mapping
+
+
+def build_coverage(
+    root: Path,
+    schema: dict,
+    catalog: dict,
+    records: list,
+) -> dict:
+    """Describe how completely the repository is covered.
+
+    A standard without a Skill reference is reported, never failed:
+    a standard may be intended for direct use.
+    """
+    id_pattern = re.compile(
+        schema["properties"]["id"]["pattern"].strip("^$")
+    )
+
+    standard_ids = sorted(
+        entry["id"]
+        for entry in catalog.get("standards", [])
+        if isinstance(entry, dict) and isinstance(entry.get("id"), str)
+    )
+
+    skills = skill_reference_map(root, id_pattern)
+
+    referenced_by_skills: dict = {}
+
+    for skill, ids in skills.items():
+        for sid in ids:
+            referenced_by_skills.setdefault(sid, []).append(skill)
+
+    evidence_links: dict = {}
+    cases: dict = {}
+    reviews: dict = {}
+    semantic_reviews: dict = {}
+    conflicts: dict = {}
+
+    for record in records:
+        data = record.data
+
+        if record.kind == "rule-evidence":
+            sid = data.get("standard_id")
+
+            if isinstance(sid, str):
+                evidence_links.setdefault(sid, []).append(record.relative)
+
+        elif record.kind == "evaluation-case":
+            sid = data.get("standard_id")
+
+            if isinstance(sid, str):
+                cases.setdefault(sid, []).append(record.relative)
+
+        elif record.kind == "review":
+            sid = data.get("standard_id")
+
+            if isinstance(sid, str):
+                reviews.setdefault(sid, []).append(record.relative)
+
+        elif record.kind == "semantic-review":
+            sid = data.get("standard_id")
+
+            if isinstance(sid, str):
+                semantic_reviews.setdefault(sid, []).append(record.relative)
+
+        elif record.kind == "conflict":
+            for rule in data.get("rules", []):
+                if not isinstance(rule, dict):
+                    continue
+
+                sid = rule.get("standard_id")
+
+                if isinstance(sid, str):
+                    conflicts.setdefault(sid, []).append(record.relative)
+
+    def split(mapping: dict) -> tuple:
+        with_ = [sid for sid in standard_ids if mapping.get(sid)]
+        without = [sid for sid in standard_ids if not mapping.get(sid)]
+        return with_, without
+
+    skills_with, skills_without = split(referenced_by_skills)
+    links_with, links_without = split(evidence_links)
+    cases_with, cases_without = split(cases)
+    reviews_with, reviews_without = split(reviews)
+    semantic_with, semantic_without = split(semantic_reviews)
+
+    linked_evidence = {
+        link.get("evidence_id")
+        for record in records
+        if record.kind == "rule-evidence"
+        for rule in record.data.get("rules", [])
+        if isinstance(rule, dict)
+        for link in rule.get("evidence", [])
+        if isinstance(link, dict)
+    }
+
+    evidence_records = [
+        record for record in records if record.kind == "evidence"
+    ]
+
+    unlinked_evidence = sorted(
+        record.id
+        for record in evidence_records
+        if record.id not in linked_evidence
+    )
+
+    unresolved_blocking = sorted(
+        record.relative
+        for record in records
+        if record.kind == "conflict"
+        and record.data.get("classification") == "confirmed"
+        and record.data.get("status") == "open"
+    )
+
+    return {
+        "standards": {
+            "total": len(standard_ids),
+            "with_skill_references": len(skills_with),
+            "without_skill_references": skills_without,
+            "with_evidence_links": len(links_with),
+            "without_evidence_links": links_without,
+            "with_evaluation_cases": len(cases_with),
+            "without_evaluation_cases": cases_without,
+            "with_lifecycle_review": len(reviews_with),
+            "without_lifecycle_review": reviews_without,
+            "with_semantic_review": len(semantic_with),
+            "without_semantic_review": semantic_without,
+            "with_conflict_records": len(
+                [sid for sid in standard_ids if conflicts.get(sid)]
+            ),
+        },
+        "skills": {
+            "total": len(skills),
+            "with_standard_references": len(
+                [name for name, ids in skills.items() if ids]
+            ),
+            "without_standard_references": sorted(
+                name for name, ids in skills.items() if not ids
+            ),
+            "references": skills,
+        },
+        "evidence": {
+            "total": len(evidence_records),
+            "linked": len(linked_evidence),
+            "unlinked": unlinked_evidence,
+        },
+        "conflicts": {
+            "total": len(
+                [record for record in records if record.kind == "conflict"]
+            ),
+            "unresolved_confirmed_blocking": unresolved_blocking,
+        },
+    }
