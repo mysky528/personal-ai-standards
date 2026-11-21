@@ -2,16 +2,6 @@ MIT License
 
 Copyright (c) 2026 PAISL contributors
 
-Scope: this license covers the software components of PAISL, namely
-`scripts/`, `schemas/`, `catalog/`, `.github/`, and repository
-configuration files.
-
-It does not cover original documentation, Agent Skills, or original
-standard summaries. Those are licensed under the Creative Commons
-Attribution 4.0 International License (CC BY 4.0). See the `LICENSE`
-file inside `docs/`, `skills/`, and `standards/`, and the
-`LICENSE-CC-BY-4.0` file in the repository root.
-
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
 files (the "Software"), to deal in the Software without
@@ -33,3 +23,17 @@ OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+Scope of this license
+
+This license covers the software components of PAISL, namely
+`scripts/`, `schemas/`, `catalog/`, `.github/`, and repository
+configuration files.
+
+It does not cover original documentation, Agent Skills, or original
+standard summaries. Those are licensed under the Creative Commons
+Attribution 4.0 International License (CC BY 4.0). See the `LICENSE`
+file inside `docs/`, `skills/`, and `standards/`, and the
+`LICENSE-CC-BY-4.0` file in the repository root.
