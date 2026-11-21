@@ -14,6 +14,7 @@
 - Validator checks Skill structure, required sections, and frontmatter
 - Validator checks Catalog metadata, category coverage, and ID numbering
 - Validator checks README to Skill list consistency
+- Validator checks license scope against the LICENSE-DOCS mapping
 
 ### Documentation
 - Updated English and Chinese README
@@ -23,6 +24,7 @@
 ### Compatibility
 - No Standard Schema changes
 - Catalog version synchronized to 0.1.1; no standard entries changed
+- Standard index reclassified from MIT to CC BY 4.0
 - No breaking changes
 
 

@@ -39,11 +39,11 @@ licensed terminology lists, or protected materials.
 
 Use independently written summaries.
 
-Original documentation, Agent Skills, and original standard
-summaries are licensed under CC BY 4.0. Software components are
-licensed under MIT. The per-directory `LICENSE` files and the SPDX
-identifiers in each file are authoritative; see `LICENSE-DOCS` in
-the repository root for the complete mapping.
+Original documentation, Agent Skills, original standard summaries,
+and the standard index are licensed under CC BY 4.0. Software
+components are licensed under MIT. The per-directory `LICENSE` files
+and the SPDX identifiers in each file are authoritative; see
+`LICENSE-DOCS` in the repository root for the complete mapping.
 
 A PAISL summary is an independently written description. It grants
 no rights to the third-party standard it references, and it does not
@@ -146,6 +146,9 @@ The v0.1.1 validator implements:
   and agreement between `catalog_version` and the release version
   declared in the CHANGELOG and both READMEs.
 - README to Skill list consistency.
+- License scope consistency. Every file must carry an SPDX
+  identifier that matches the path to license mapping declared in
+  `LICENSE-DOCS`.
 
 Not implemented in v0.1.x:
 

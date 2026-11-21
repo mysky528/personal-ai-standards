@@ -4,17 +4,18 @@ PAISL Licensing Notice / PAISL 许可说明
 This file is an index. It states which license applies to which
 part of the repository. It is not the license text itself.
 
-Original documentation, Agent Skills, and original standard summaries
-are licensed under the Creative Commons Attribution 4.0 International
-License (CC BY 4.0).
+Original documentation, Agent Skills, original standard summaries,
+and the standard index are licensed under the Creative Commons
+Attribution 4.0 International License (CC BY 4.0).
 
 SPDX-License-Identifier: CC-BY-4.0
 
 The MIT license in the repository root file `LICENSE` applies only
 to the software components listed in the table below. It does not
-apply to original documentation, Agent Skills, or original standard
-summaries, which are licensed under CC BY 4.0 as stated here and in
-the `LICENSE` file inside each affected directory.
+apply to original documentation, Agent Skills, original standard
+summaries, or the standard index, which are licensed under CC BY 4.0
+as stated here and in the `LICENSE` file inside each affected
+directory.
 
 Where the license applies
 -------------------------
@@ -24,8 +25,9 @@ Where the license applies
 | `docs/`                         | CC BY 4.0 | Original documentation           |
 | `skills/`                       | CC BY 4.0 | Original Agent Skills            |
 | `standards/`                    | CC BY 4.0 | Original standard summaries      |
+| `catalog/`                      | CC BY 4.0 | Standard index                   |
 | `*.md` in the repository root   | CC BY 4.0 | Original documentation           |
-| `scripts/`, `schemas/`, `catalog/`, `.github/`, config files | MIT | Software components |
+| `scripts/`, `schemas/`, `.github/`, config files | MIT | Software components |
 
 Per-directory `LICENSE` files apply to every file in the directory
 in which they appear. Individual files additionally declare their

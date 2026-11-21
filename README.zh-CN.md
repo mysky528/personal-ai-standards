@@ -89,10 +89,11 @@ PAISL 采用拆分许可。
 
 | 范围 | 许可 | 全文 |
 |---|---|---|
-| 软件部分：`scripts/`、`schemas/`、`catalog/`、`.github/`、配置文件 | MIT | [`LICENSE`](LICENSE) |
+| 软件部分：`scripts/`、`schemas/`、`.github/`、配置文件 | MIT | [`LICENSE`](LICENSE) |
 | 原创文档：`docs/` 与根目录 `*.md` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
 | Agent Skills：`skills/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
 | 原创标准摘要：`standards/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
+| 标准索引：`catalog/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
 
 每个受许可目录内含独立的 `LICENSE` 文件，每个文件以 SPDX 标识声明自身许可。
 

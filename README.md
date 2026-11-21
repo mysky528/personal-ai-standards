@@ -103,10 +103,11 @@ PAISL uses a split license.
 
 | Scope | License | Full text |
 |---|---|---|
-| Software: `scripts/`, `schemas/`, `catalog/`, `.github/`, config | MIT | [`LICENSE`](LICENSE) |
+| Software: `scripts/`, `schemas/`, `.github/`, config | MIT | [`LICENSE`](LICENSE) |
 | Original documentation: `docs/`, root `*.md` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
 | Agent Skills: `skills/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
 | Original standard summaries: `standards/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
+| Standard index: `catalog/` | CC BY 4.0 | [`LICENSE-CC-BY-4.0`](LICENSE-CC-BY-4.0) |
 
 Each licensed directory carries its own `LICENSE` file, and each file
 declares its license with an SPDX identifier.

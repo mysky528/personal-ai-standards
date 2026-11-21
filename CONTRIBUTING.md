@@ -52,8 +52,8 @@ Original documentation contributions: CC BY 4.0.
 The license of a new file is determined by its location and by the
 SPDX identifier in its header:
 
-- `scripts/`, `schemas/`, `catalog/`, `.github/`: MIT.
-- `docs/`, `skills/`, `standards/`, and root `*.md`: CC BY 4.0.
+- `scripts/`, `schemas/`, `.github/`: MIT.
+- `docs/`, `skills/`, `standards/`, `catalog/`, and root `*.md`: CC BY 4.0.
 
 Add `SPDX-License-Identifier: MIT` or
 `SPDX-License-Identifier: CC-BY-4.0` to every new file that supports
