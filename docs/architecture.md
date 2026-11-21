@@ -110,10 +110,28 @@ report only when a record is wrong:
   at a file that is missing, is reported
 - a record in a known directory with an unknown identifier prefix is
   reported
+- a rejected evidence record that supports a rule is reported
+- evidence that contradicts a rule is surfaced for review
 
 `python scripts/validate.py` and `python -m paisl validate` run the
 same checks. The compatibility wrapper keeps the v0.1.x command
 contract, including its output format.
+
+### Evidence registry
+
+`python -m paisl evidence check` reports how well the rules of each
+Standard are supported.
+
+A rule is supported when an evidence record with the `supports`
+relationship is linked to it. A rule is *sufficient for verification*
+only when at least one of those records has been reviewed. A `context`
+relationship never satisfies the requirement, because it explains the
+rule without backing it.
+
+A reviewed record must name a reviewer, a time, and a rationale, and
+must record that the source was inspected. A URL alone is never
+reviewed evidence. These rules are part of the evidence contract, so
+the schema rejects a record that breaks them.
 
 ### Coverage report
 

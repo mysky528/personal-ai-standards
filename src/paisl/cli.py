@@ -25,6 +25,7 @@ from .errors import (
     PaislError,
 )
 from .coverage import build_coverage, validate_skills
+from .evidence import check_evidence, evidence_coverage
 from .licensing import validate_license_scope
 from .paths import find_repo_root
 from .registry import (
@@ -38,6 +39,8 @@ from .registry import (
 from .reporting import (
     render_coverage_json,
     render_coverage_text,
+    render_evidence_json,
+    render_evidence_text,
     render_json_report,
     render_text_report,
 )
@@ -110,6 +113,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write the report to this file instead of standard output.",
     )
 
+    evidence_parser = subparsers.add_parser(
+        "evidence",
+        help="Work with the evidence registry.",
+    )
+    evidence_subparsers = evidence_parser.add_subparsers(
+        dest="evidence_command",
+        required=True,
+    )
+
+    evidence_check_parser = evidence_subparsers.add_parser(
+        "check",
+        help="Check the evidence registry and report its coverage.",
+    )
+    evidence_check_parser.add_argument(
+        "--repo",
+        type=Path,
+        default=None,
+        help="Repository root. Defaults to the current directory.",
+    )
+    evidence_check_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Report format.",
+    )
+    evidence_check_parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Write the report to this file instead of standard output.",
+    )
+
     return parser
 
 
@@ -151,6 +186,7 @@ def run_validation(root: Path) -> tuple[list, list, int, int]:
     resolve_references(
         root, records, build_standard_index(root, catalog), errors
     )
+    check_evidence(records, errors, warnings)
 
     return errors, warnings, standards_checked, skills_checked
 
@@ -230,6 +266,35 @@ def _run_coverage(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def run_evidence_coverage(root: Path) -> dict:
+    """Collect the evidence coverage report."""
+    errors: list = []
+    records = load_records(root, errors)
+
+    return evidence_coverage(records)
+
+
+def _run_evidence_check(args: argparse.Namespace) -> int:
+    try:
+        root = args.repo.resolve() if args.repo else find_repo_root()
+        coverage = run_evidence_coverage(root)
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        print(f"ERROR: Initialization failed: {exc}")
+        return EXIT_VALIDATION
+    except PaislError as exc:
+        print(f"ERROR: {exc}")
+        return exc.exit_code
+
+    if args.format == "json":
+        report = render_evidence_json(coverage)
+    else:
+        report = render_evidence_text(coverage)
+
+    _write_report(report, args.output)
+
+    return EXIT_SUCCESS
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the command line interface."""
     parser = build_parser()
@@ -240,6 +305,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "coverage":
         return _run_coverage(args)
+
+    if args.command == "evidence":
+        if args.evidence_command == "check":
+            return _run_evidence_check(args)
 
     parser.error(f"Unknown command: {args.command}")
 

@@ -39,6 +39,9 @@ jobs:
       - name: Report coverage
         run: python -m paisl coverage
 
+      - name: Check the evidence registry
+        run: python -m paisl evidence check
+
       - name: Run the test suite
         run: python -m pytest
 

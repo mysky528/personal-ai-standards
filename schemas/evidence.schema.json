@@ -76,7 +76,7 @@
   },
   "allOf": [
     {
-      "$comment": "A reviewed record must name a reviewer, a time, and a rationale. A URL alone is never reviewed evidence.",
+      "$comment": "A reviewed record must name a reviewer, a time, and a rationale, and must document that the source was inspected. A URL alone is never reviewed evidence.",
       "if": {
         "type": "object",
         "required": ["review"],
@@ -91,6 +91,7 @@
         }
       },
       "then": {
+        "required": ["source"],
         "properties": {
           "review": {
             "required": ["reviewed_by", "reviewed_at", "rationale"],
@@ -98,6 +99,13 @@
               "reviewed_by": {"type": "string", "minLength": 1},
               "reviewed_at": {"type": "string", "format": "date-time"},
               "rationale": {"type": "string", "minLength": 1}
+            }
+          },
+          "source": {
+            "required": ["accessed", "retrieved_at"],
+            "properties": {
+              "accessed": {"const": true},
+              "retrieved_at": {"type": "string", "format": "date-time"}
             }
           }
         }

@@ -137,3 +137,52 @@ def render_coverage_json(coverage: dict) -> str:
     }
 
     return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+
+
+def render_evidence_text(coverage: dict) -> str:
+    """Render the evidence report in the text format."""
+    out = io.StringIO()
+    summary = coverage["summary"]
+
+    print("\n=== PAISL Evidence Report ===", file=out)
+    print(f"Standards with evidence links: {summary['standards_with_links']}", file=out)
+    print(f"Rules with links: {summary['rules_total']}", file=out)
+    print(
+        "Rules with reviewed supporting evidence: "
+        f"{summary['rules_with_reviewed_support']}",
+        file=out,
+    )
+
+    for standard_id, standard in sorted(coverage["standards"].items()):
+        print(f"  {standard_id}", file=out)
+
+        for rule_id, rule in sorted(standard["rules"].items()):
+            flags = []
+
+            if rule["contradicting"]:
+                flags.append("contradicting")
+
+            if not rule["sufficient_for_verification"]:
+                flags.append("not sufficient for verification")
+
+            suffix = f" ({', '.join(flags)})" if flags else ""
+
+            print(
+                f"    {rule_id}: supporting={rule['supporting']} "
+                f"reviewed={rule['reviewed_supporting']} "
+                f"context={rule['context']} "
+                f"contradicting={rule['contradicting']}{suffix}",
+                file=out,
+            )
+
+    return out.getvalue()
+
+
+def render_evidence_json(coverage: dict) -> str:
+    """Render the evidence report as JSON."""
+    payload = {
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "evidence": coverage,
+    }
+
+    return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"

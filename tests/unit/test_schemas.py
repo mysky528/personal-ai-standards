@@ -149,6 +149,12 @@ def _mutate(name: str) -> list:
         no_rationale["review"]["reviewed_by"] = "reviewer-id"
         no_rationale["review"]["reviewed_at"] = "2026-11-21T12:00:00Z"
         instances.append(no_rationale)
+        not_inspected = json.loads(json.dumps(base))
+        not_inspected["review"]["status"] = "reviewed"
+        not_inspected["review"]["reviewed_by"] = "reviewer-id"
+        not_inspected["review"]["reviewed_at"] = "2026-11-21T12:00:00Z"
+        not_inspected["review"]["rationale"] = "Source inspected."
+        instances.append(not_inspected)
         bad_id = json.loads(json.dumps(base))
         bad_id["id"] = "EVIDENCE-1"
         instances.append(bad_id)
@@ -297,8 +303,31 @@ def test_evidence_review_requires_inspection():
         "reviewed_at": "2026-11-21T12:00:00Z",
         "rationale": "Source inspected.",
     }
+    instance["source"]["accessed"] = True
+    instance["source"]["retrieved_at"] = "2026-11-21T12:00:00Z"
 
     assert not list(validator.iter_errors(instance))
+
+
+def test_evidence_review_requires_recorded_inspection():
+    """A reviewed record must document that the source was inspected."""
+    validator = load_validator("evidence")
+    instance = load_instance(CONTRACTS["evidence"][0])
+
+    instance["review"] = {
+        "status": "reviewed",
+        "reviewed_by": "reviewer-id",
+        "reviewed_at": "2026-11-21T12:00:00Z",
+        "rationale": "Source inspected.",
+    }
+
+    errors = list(validator.iter_errors(instance))
+
+    assert errors, "a reviewed record without source inspection was accepted"
+
+    locations = {".".join(map(str, error.absolute_path)) for error in errors}
+
+    assert any("source" in location for location in locations), locations
 
 
 def test_conflict_resolution_requires_a_reviewer():
