@@ -6,7 +6,7 @@ and practices for human–AI communication and collaboration.
 
 [简体中文](README.zh-CN.md)
 
-**Version:** 0.1.0  
+**Version:** 0.1.1  
 **Status:** Experimental  
 **Languages:** English / Simplified Chinese  
 **MCP:** Deferred
@@ -30,6 +30,33 @@ PAISL is not merely a prompt collection.
 | `scripts/` | Structural validation |
 | `docs/` | Architecture and governance |
 | `.github/` | CI and contribution workflows |
+
+
+
+## Built-in Skills
+
+PAISL includes seven file-based Agent Skills:
+
+| Skill | Purpose | Standard IDs |
+|---|---|---|
+| standard-discovery | Find applicable standards | Catalog |
+| ste-writing | Improve technical writing | COMM-001, COMM-003 |
+| structured-thinking | Organize complex reasoning | REAS-001/002/003/004, COMM-002 |
+| ai-output-review | Review AI-generated outputs | VER-001, COMM-001/002, REAS-002 |
+| visual-explanation | Plan visual explanations | VIS-001, VIS-002 |
+| security-review | Preliminary application security review | ENG-001 |
+| task-clarification | Clarify tasks and next actions | PROD-001 |
+
+Table entries abbreviate the standard IDs: `COMM-001` means
+`PAISL-COMM-001`.
+
+Skills are file-based procedures. Availability in a
+specific Agent runtime depends on its integration method.
+
+A Standard may exist without a dedicated Skill.
+
+See `docs/governance.md` for coverage rules.
+
 
 ## Principles
 

@@ -1,6 +1,24 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 # Changelog
 
+
+## [0.1.1] - 2026-11-21
+
+### Added
+- security-review Skill for PAISL-ENG-001
+- task-clarification Skill for PAISL-PROD-001
+- Standard-to-Skill coverage governance
+
+### Documentation
+- Updated English and Chinese README
+- Extended the user guide for seven Skills
+
+### Compatibility
+- No Standard Schema changes
+- No Catalog changes
+- No breaking changes
+
+
 ## [0.1.0] - 2026-11-21
 
 ### Added

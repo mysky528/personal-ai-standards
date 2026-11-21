@@ -2,7 +2,7 @@
 # PAISL v0.1.0 用户使用手册
 
 > Personal AI Standards Library · User Guide  
-> 文档版本：1.0 · 适用软件版本：PAISL v0.1.0 · 语言：简体中文  
+> 文档版本：1.1 · 适用软件版本：PAISL v0.1.1 · 语言：简体中文  
 > 状态：基于已验收仓库设计的使用说明；具体 Agent 兼容性需在实际环境中验证。
 
 ## 目录
@@ -240,6 +240,108 @@ v0.1.0 的 Skill 是仓库中的 Markdown 操作说明，**不是**安装后就�
 - “这份 AI 报告有没有事实依据” → `ai-output-review`。
 - “设计一张教学示意图的内容” → `visual-explanation`。
 - “我不知道该选什么规范” → `standard-discovery`。
+
+
+### 4.6 security-review：应用安全初步审查
+
+**引用标准：** PAISL-ENG-001
+
+**适用场景：**
+
+- 应用架构安全评审
+- API 身份认证与授权设计检查
+- 数据流与信任边界分析
+- Agent 工具访问安全评估
+
+**使用方法：**
+
+1. 阅读 `skills/security-review/SKILL.md`。
+2. 通过 Catalog 读取 PAISL-ENG-001。
+3. 提供待审查系统的架构与约束。
+4. 要求 Agent 区分事实、假设和未知项。
+5. 审查风险发现及验证建议。
+
+**示例 Prompt：**
+
+> 请按照 PAISL 的 security-review Skill，
+> 对以下系统架构进行初步安全审查。
+>
+> 系统包含 Web 前端、API Gateway、
+> Agent Runtime、PostgreSQL 和外部 LLM API。
+>
+> 请识别信任边界、认证与授权假设、
+> 潜在安全风险及待验证事项。
+>
+> 不要假设未描述的安全控制已经实现。
+> 不要宣称完成 OWASP ASVS 合规认证。
+
+**预期输出：**
+
+- 系统上下文
+- 信任边界
+- 安全观察与风险
+- 未验证假设
+- 建议行动
+- 引用的 PAISL 标准及规则
+
+### 4.7 task-clarification：任务澄清
+
+**引用标准：** PAISL-PROD-001
+
+**适用场景：**
+
+- 项目计划整理
+- 模糊任务分解
+- 会议待办提取
+- Agent 执行任务准备
+- 每周任务规划
+
+**使用方法：**
+
+1. 阅读 `skills/task-clarification/SKILL.md`。
+2. 通过 Catalog 读取 PAISL-PROD-001。
+3. 提供原始任务清单。
+4. 要求 Agent 明确目标和下一步行动。
+5. 检查是否编造负责人、截止日期或依赖。
+
+**示例 Prompt：**
+
+> 请按照 PAISL 的 task-clarification Skill，
+> 整理以下任务：
+>
+> - 完善 PAISL 用户手册
+> - 检查标准与 Skill 的引用关系
+> - 准备下一版本的产品需求
+>
+> 请区分项目目标、下一步行动、
+> 等待事项和需要澄清的问题。
+>
+> 未提供的负责人和截止日期标记为
+> "未指定"，不要自行编造。
+
+**预期输出：**
+
+- 目标摘要
+- 下一步行动清单
+- 项目与预期成果
+- 等待事项
+- 待澄清问题
+- 引用的 PAISL 标准及规则
+
+### 4.8 Standard 与 Skill 的关系
+
+Standard 定义可复用规则。
+
+Skill 定义 Agent 如何执行一类任务。
+
+一个 Skill 可以引用多个 Standard，
+一个 Standard 也可以被多个 Skill 引用。
+
+没有专用 Skill 的 Standard 仍可以通过
+Catalog 被直接发现和使用。
+
+详见 `docs/governance.md`。
+
 
 ## 05 Agent 集成与 Prompt 规范
 

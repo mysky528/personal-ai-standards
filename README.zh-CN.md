@@ -5,7 +5,7 @@
 
 [English](README.md)
 
-**版本：** 0.1.0  
+**版本：** 0.1.1  
 **状态：** 实验性  
 **语言：** English / 简体中文  
 **MCP：** 延后实现
@@ -29,6 +29,36 @@ PAISL 解决两个核心问题：
 - `scripts/`：结构化校验。
 - `docs/`：架构、治理与集成说明。
 - `AGENTS.md`：Agent 行为契约。
+
+
+## 内置 Agent Skills
+
+PAISL 提供七个基于文件的 Agent Skills。
+
+| Skill | 主要用途 |
+|---|---|
+| standard-discovery | 标准发现与选择 |
+| ste-writing | 技术文档规范化 |
+| structured-thinking | 结构化思考 |
+| ai-output-review | AI 输出质量审查 |
+| visual-explanation | 渐进式可视化解释 |
+| security-review | 应用安全初步审查 |
+| task-clarification | 任务澄清与下一步行动 |
+
+其中：
+
+- `security-review` 引用 `PAISL-ENG-001`。
+- `task-clarification` 引用 `PAISL-PROD-001`。
+
+Standard 与 Skill 是多对多关系。
+
+所有 Standard 必须通过 Catalog 可发现，
+但不要求每个 Standard 都拥有专用 Skill。
+
+Skill 是 Agent 执行流程，不等于第三方标准认证。
+
+覆盖治理规则见 `docs/governance.md`。
+
 
 ## 快速开始
 
