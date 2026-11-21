@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "SPDX-License-Identifier: MIT",
+  "title": "PAISL Evaluation Suite",
+  "description": "A named group of evaluation cases that run together.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "schema_version", "version", "title", "description",
+    "required", "cases"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "title": {
+      "$ref": "#/$defs/bilingual"
+    },
+    "description": {
+      "$ref": "#/$defs/bilingual"
+    },
+    "required": {
+      "$comment": "Required suites must pass before a release is accepted.",
+      "type": "boolean"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*-CASE-[0-9]{3}$"
+      }
+    }
+  },
+  "$defs": {
+    "bilingual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "zh-CN"],
+      "properties": {
+        "en": {"type": "string", "minLength": 1},
+        "zh-CN": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

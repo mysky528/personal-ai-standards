@@ -1,0 +1,8 @@
+SPDX-License-Identifier: CC-BY-4.0
+
+Input fixture for COMM-001-CASE-001.
+
+The instruction below is deliberately vague. It states an intent
+without naming the action, the object, or the trigger.
+
+maybe restart the service when it does not respond

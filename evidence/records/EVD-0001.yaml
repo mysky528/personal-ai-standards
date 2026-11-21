@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: CC-BY-4.0
+id: EVD-0001
+schema_version: "0.2.0"
+title: "OWASP ASVS project documentation"
+source:
+  url: "https://owasp.org/www-project-application-security-verification-standard/"
+  type: official
+  publisher: OWASP
+  retrieved_at: null
+  accessed: false
+review:
+  status: unreviewed
+  reviewed_by: null
+  reviewed_at: null
+  rationale: null
+notes: >-
+  Reference instance for the evidence contract. The source is
+  registered but has not been substantively verified.

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "SPDX-License-Identifier: MIT",
+  "title": "PAISL Lifecycle Review Record",
+  "description": "An approval of a Standard lifecycle transition. A separate record type covers bilingual semantic review.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "schema_version", "standard_id", "standard_version",
+    "from_status", "to_status", "reviewed_content_sha256",
+    "reviewer", "reviewed_at", "decision", "rationale", "evidence_ids"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^REV-[0-9]{4}$"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "standard_id": {
+      "type": "string",
+      "pattern": "^PAISL-(COMM|REAS|PROD|VIS|VER|ENG)-[0-9]{3}$"
+    },
+    "standard_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "from_status": {
+      "enum": ["draft", "review", "verified", "deprecated"]
+    },
+    "to_status": {
+      "enum": ["draft", "review", "verified", "deprecated"]
+    },
+    "reviewed_content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "reviewer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decision": {
+      "enum": ["approved", "rejected"]
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^EVD-[0-9]{4}$"
+      }
+    }
+  }
+}

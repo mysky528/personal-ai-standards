@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: CC-BY-4.0
+id: REV-0001
+schema_version: "0.2.0"
+standard_id: PAISL-ENG-001
+standard_version: "0.1.0"
+from_status: draft
+to_status: review
+reviewed_content_sha256: "08418e91bf9a8f456a535b6f4c21229cc4dcfe05492982023c28406db86ae45e"
+reviewer: "maintainer-id"
+reviewed_at: "2026-11-21T12:00:00Z"
+decision: approved
+rationale: >-
+  Reference instance for the lifecycle review contract. It is not the
+  record of an actual review and must not be used to promote a
+  Standard.
+evidence_ids: []

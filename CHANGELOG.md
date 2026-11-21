@@ -14,6 +14,11 @@ implemented yet.
 - `python -m paisl validate` command with text and JSON reports
 - `paisl` console script entry point
 - Test suite covering validator equivalence and CLI behaviour
+- Data contracts for evidence records, rule evidence links,
+  lifecycle reviews, semantic reviews, evaluation cases, evaluation
+  suites, and conflict records
+- Reference instances of the new contracts under `evidence/`,
+  `governance/`, and `evaluations/`
 
 ### Changed
 - The validator implementation moved from `scripts/validate.py` into
@@ -29,6 +34,8 @@ implemented yet.
 - No Standard or Skill content changes
 - The license scope check now ignores build artefacts such as
   `*.egg-info`
+- The new content directories are licensed under CC BY 4.0, matching
+  the standard index
 
 
 ## [0.1.1] - 2026-11-21

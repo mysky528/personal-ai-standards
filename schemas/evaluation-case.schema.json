@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "SPDX-License-Identifier: MIT",
+  "title": "PAISL Evaluation Case",
+  "description": "A machine readable case that asserts how an output must look.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "schema_version", "standard_id", "rule_ids", "title",
+    "fixture", "assertions"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*-CASE-[0-9]{3}$"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "standard_id": {
+      "type": "string",
+      "pattern": "^PAISL-(COMM|REAS|PROD|VIS|VER|ENG)-[0-9]{3}$"
+    },
+    "rule_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^R[0-9]{3}$"
+      }
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "output"],
+      "properties": {
+        "input": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/].*"
+        },
+        "output": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/].*"
+        }
+      }
+    },
+    "assertions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "evaluator", "params", "severity"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^A[0-9]{3}$"
+          },
+          "evaluator": {
+            "$comment": "The allowlist of deterministic evaluators.",
+            "enum": ["contains", "excludes", "regex", "json_path"]
+          },
+          "params": {
+            "type": "object"
+          },
+          "severity": {
+            "enum": ["must", "should", "may"]
+          }
+        }
+      }
+    }
+  }
+}

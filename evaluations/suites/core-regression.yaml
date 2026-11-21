@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: CC-BY-4.0
+id: core-regression
+schema_version: "0.2.0"
+version: "0.2.0"
+title:
+  en: "Core regression suite"
+  zh-CN: "核心回归套件"
+description:
+  en: >-
+    Deterministic cases that must pass before a release is accepted.
+  zh-CN: >-
+    发布验收前必须通过的确定性用例集合。
+required: true
+cases:
+  - COMM-001-CASE-001

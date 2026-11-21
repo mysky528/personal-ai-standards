@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: CC-BY-4.0
+schema_version: "0.2.0"
+standard_id: PAISL-ENG-001
+standard_version: "0.1.0"
+rules:
+  - rule_id: R001
+    evidence:
+      - evidence_id: EVD-0001
+        relationship: supports
+        locator: "Project overview"
+        note: >-
+          Reference instance for the link contract. The evidence is
+          registered but not yet reviewed, so it does not satisfy the
+          supporting-evidence requirement for a verified Standard.

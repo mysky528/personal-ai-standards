@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: CC-BY-4.0
+id: COMM-001-CASE-001
+schema_version: "0.2.0"
+standard_id: PAISL-COMM-001
+rule_ids:
+  - R001
+title: "Explicit action instruction"
+fixture:
+  input: evaluations/fixtures/comm-001-input.txt
+  output: evaluations/fixtures/comm-001-output.txt
+assertions:
+  - id: A001
+    evaluator: contains
+    params:
+      text: "Restart the service."
+    severity: must
+  - id: A002
+    evaluator: excludes
+    params:
+      text: "maybe restart"
+    severity: should
