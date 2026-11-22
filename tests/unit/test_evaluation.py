@@ -186,3 +186,36 @@ def test_the_report_has_a_json_form(repo_root):
     assert payload["summary"]["error"] == 0
     assert payload["summary"]["assertions"]["pass"] == 2
     assert payload["cases"][0]["output_digest"]
+
+
+def test_the_engine_refuses_an_evaluator_that_is_not_allowed(repo_root):
+    """The engine keeps its own guard behind the contract.
+
+    The contract of a case allowlists the evaluators, so a case with
+    another one is refused before it runs. The engine still refuses
+    it, because the two guards do not depend on each other.
+    """
+    from paisl.evaluation import evaluate_case
+
+    case = {
+        "id": "X-CASE-001",
+        "standard_id": "PAISL-COMM-001",
+        "rule_ids": ["R001"],
+        "fixture": {
+            "input": "evaluations/fixtures/comm-001-input.txt",
+            "output": "evaluations/fixtures/comm-001-output.txt",
+        },
+        "assertions": [
+            {
+                "id": "A001",
+                "evaluator": "execute_python",
+                "params": {"text": "x"},
+                "severity": "must",
+            }
+        ],
+    }
+
+    result = evaluate_case(repo_root, case)
+
+    assert result.status == "error"
+    assert "not allowed" in result.assertions[0].message

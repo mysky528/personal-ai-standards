@@ -19,6 +19,7 @@ fixes, and each of them failed against the v0.2.0 implementation.
 | REG-011 | A suite that named no case was reported as a success, because the counts of failures, errors, and skips were all zero |
 | REG-012 | A fixture that exists but cannot be read ended the whole run instead of failing its own case, and the declared output fixture was required even when the caller supplied the output |
 | REG-013 | A case that verified nothing counted as a success, and a skipped optional assertion was invisible in the summary |
+| REG-014 | The check commands did not run the whole validation of their own domain, so a broken cross reference passed them, while their names suggested an enforcing check |
 """
 
 from __future__ import annotations
@@ -887,3 +888,109 @@ def test_reg013_a_skipped_case_is_counted(repo_copy):
     assert result.returncode == 1, (
         "a suite whose only case was skipped does not pass"
     )
+
+
+# --- REG-014 ---------------------------------------------------------
+
+def _broken_evidence_link(repo) -> None:
+    """Write a link that names a Standard which does not exist."""
+    _write(
+        repo,
+        "evidence/links/PAISL-ENG-002.yaml",
+        {
+            "schema_version": "0.2.0",
+            "standard_id": "PAISL-ENG-002",
+            "standard_version": "0.1.0",
+            "rules": [
+                {
+                    "rule_id": "R001",
+                    "evidence": [
+                        {
+                            "evidence_id": "EVD-0001",
+                            "relationship": "supports",
+                            "locator": "L",
+                            "note": None,
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+
+
+def test_reg014_evidence_check_resolves_its_references(repo_copy):
+    """The evidence check resolves the references of its own domain."""
+    _broken_evidence_link(repo_copy)
+
+    result = _cli(repo_copy, "evidence", "check")
+
+    assert result.returncode == 1, (
+        "a reference to a Standard that does not exist must fail the check"
+    )
+    assert "PAISL-ENG-002" in result.stdout
+
+
+def test_reg014_governance_check_resolves_its_references(repo_copy):
+    """The governance check resolves the references of its own domain."""
+    _write(
+        repo_copy,
+        "governance/reviews/REV-0002.yaml",
+        {
+            "id": "REV-0002",
+            "schema_version": "0.2.0",
+            "standard_id": "PAISL-ENG-002",
+            "standard_version": "0.1.0",
+            "from_status": "draft",
+            "to_status": "review",
+            "reviewed_content_sha256": "0" * 64,
+            "reviewer": "reviewer-id",
+            "reviewed_at": "2026-11-21T12:00:00Z",
+            "decision": "approved",
+            "rationale": "Reviewed.",
+            "evidence_ids": [],
+        },
+    )
+
+    result = _cli(repo_copy, "governance", "check")
+
+    assert result.returncode == 1
+    assert "PAISL-ENG-002" in result.stdout
+
+
+def test_reg014_evaluate_resolves_the_references_of_its_cases(repo_copy):
+    """The evaluation refuses a case that names a rule that is absent."""
+    _write(repo_copy, "evaluations/cases/REG-REF-CASE-001.yaml", _case(
+        "REG-REF-CASE-001",
+    ))
+    case_path = repo_copy / "evaluations" / "cases" / "REG-REF-CASE-001.yaml"
+    data = yaml.safe_load(case_path.read_text(encoding="utf-8"))
+    data["rule_ids"] = ["R999"]
+    case_path.write_text(
+        yaml.safe_dump(data, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    _write(
+        repo_copy,
+        "evaluations/suites/reg-suite.yaml",
+        _suite(["REG-REF-CASE-001"]),
+    )
+
+    result = _cli(repo_copy, "evaluate", "--suite", "reg-suite")
+
+    assert result.returncode == 1, (
+        "a case that names a rule that does not exist must not pass"
+    )
+    assert "R999" in result.stdout
+
+
+def test_reg014_the_report_commands_never_fail(repo_copy):
+    """The commands that only show a state never fail."""
+    _broken_evidence_link(repo_copy)
+
+    for command in (("coverage",), ("report",)):
+        result = _cli(repo_copy, *command)
+
+        assert result.returncode == 0, (
+            f"{command} only shows a state and must not fail"
+        )

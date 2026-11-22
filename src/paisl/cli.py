@@ -489,11 +489,25 @@ def run_evidence_coverage(root: Path) -> dict:
 
 
 def _run_evidence_check(args: argparse.Namespace) -> int:
+    """Check the evidence registry.
+
+    This is an enforcing check, not a report. It validates the
+    records of its own domain against their contracts, resolves the
+    references they make, and returns a non-zero code when
+    something blocks.
+    """
     try:
         root = args.repo.resolve() if args.repo else find_repo_root()
         errors: list = []
         warnings: list = []
-        records = load_records(root, errors)
+        records = load_records(root, errors, kinds=EVIDENCE_KINDS)
+        resolve_references(
+            root,
+            records,
+            build_standard_index(root, load_catalog(root)),
+            errors,
+            kinds=EVIDENCE_KINDS,
+        )
         check_evidence(records, errors, warnings)
         coverage = evidence_coverage(records, root)
     except (OSError, ValueError, yaml.YAMLError) as exc:
@@ -578,6 +592,13 @@ def run_governance(root: Path) -> dict:
 
 
 def _run_governance_check(args: argparse.Namespace) -> int:
+    """Check the lifecycle governance.
+
+    This is an enforcing check, not a report. It validates the
+    records of its own domain against their contracts, resolves the
+    references they make, and returns a non-zero code when
+    something blocks.
+    """
     try:
         root = args.repo.resolve() if args.repo else find_repo_root()
         governance = run_governance(root)
@@ -591,9 +612,12 @@ def _run_governance_check(args: argparse.Namespace) -> int:
         )
         validator = build_validator(schema)
         catalog = load_catalog(root)
-        records = load_records(root, errors)
+        records = load_records(root, errors, kinds=GOVERNANCE_KINDS)
         standard_index = build_standard_index(root, catalog)
 
+        resolve_references(
+            root, records, standard_index, errors, kinds=GOVERNANCE_KINDS
+        )
         check_review_records(
             root, records, standard_index, errors, warnings
         )
@@ -645,6 +669,12 @@ def _required_suite_id(root: Path) -> str | None:
                 return identifier
 
     return None
+
+
+EVIDENCE_KINDS = {"evidence", "rule-evidence"}
+GOVERNANCE_KINDS = {"review", "semantic-review", "conflict"}
+CONFLICT_KINDS = {"conflict"}
+EVALUATION_KINDS = {"evaluation-case", "evaluation-suite"}
 
 
 def _load_suite(root: Path, suite_id: str, errors: list):
@@ -768,6 +798,26 @@ def _run_evaluate(args: argparse.Namespace) -> int:
 
             output_text = candidate.read_text(encoding="utf-8")
 
+        # The evaluation material is validated and its references are
+        # resolved, so that a case that names a Standard or a rule
+        # that does not exist cannot be reported as a pass.
+        evaluation_records = load_records(
+            root, errors, kinds=EVALUATION_KINDS
+        )
+        resolve_references(
+            root,
+            evaluation_records,
+            build_standard_index(root, load_catalog(root)),
+            errors,
+            kinds=EVALUATION_KINDS,
+            check_fixtures=False,
+        )
+
+        if errors:
+            for message in errors:
+                print(f"ERROR: {message}")
+            return EXIT_VALIDATION
+
         result = run_suite(
             root,
             suite,
@@ -868,9 +918,25 @@ def run_conflicts(root: Path) -> dict:
 
 
 def _run_conflicts_check(args: argparse.Namespace) -> int:
+    """Check the rule conflicts.
+
+    This is an enforcing check. It validates the conflict records
+    against their contract, resolves the references they make, and
+    returns a non-zero code when a confirmed conflict is still open.
+    """
     try:
         root = args.repo.resolve() if args.repo else find_repo_root()
         report = run_conflicts(root)
+
+        errors: list = []
+        warnings: list = []
+        catalog = load_catalog(root)
+        standard_index = build_standard_index(root, catalog)
+        records = load_records(root, errors, kinds=CONFLICT_KINDS)
+        resolve_references(
+            root, records, standard_index, errors, kinds=CONFLICT_KINDS
+        )
+        check_conflicts(root, records, standard_index, errors, warnings)
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"ERROR: Initialization failed: {exc}")
         return EXIT_VALIDATION
@@ -885,11 +951,17 @@ def _run_conflicts_check(args: argparse.Namespace) -> int:
 
     _write_report(rendered, args.output)
 
+    for message in errors:
+        print(f"ERROR: {message}")
+
     blocking = report["declared"]["unresolved_confirmed_blocking"]
 
     if blocking:
         for relative in blocking:
             print(f"ERROR: {relative}: a confirmed conflict is still open")
+        return EXIT_VALIDATION
+
+    if errors:
         return EXIT_VALIDATION
 
     return EXIT_SUCCESS

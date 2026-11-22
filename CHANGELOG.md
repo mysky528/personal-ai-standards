@@ -86,6 +86,16 @@
 - The report counts the assertions beside the counts of the cases, so
   that a skipped optional assertion is visible in the summary and
   not only in the detail of a case.
+- The check commands check the whole of their own domain. The
+  evidence check resolves the references of the evidence records,
+  the governance check resolves the references of the review records,
+  the conflicts check resolves the references of the conflicts, and
+  the evaluation refuses a case that names a Standard or a rule that
+  does not exist. Their names promised an enforcing check, and they
+  did not deliver one.
+- The commands that only show a state stay out of the way. `coverage`
+  and `report` never fail, so they can be used to look at the
+  repository without turning it into a gate.
 
 
 ## [0.2.0] - 2026-11-22

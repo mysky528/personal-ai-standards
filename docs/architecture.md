@@ -339,14 +339,23 @@ The contract by command:
 
 | Command | `0` | `1` |
 |---|---|---|
-| `validate` | The registry, the Catalog, the Skills, and the records are valid | A finding that blocks the repository |
+| `validate` | The registry, the Catalog, the Skills, and every record are valid | A finding that blocks the repository |
 | `evaluate` | Every case of the suite passed | A case failed, errored, or was skipped |
-| `evidence check` | No rejected record supports a rule | A rejected record supports a rule |
-| `governance check` | Every Standard that claims to be verified clears the local gates | A Standard claims to be verified without clearing them |
-| `conflicts check` | No confirmed conflict is still open | A confirmed conflict is still open |
+| `evidence check` | The evidence records and their links are valid | A record breaks its contract, names something that does not exist, or supports a rule with a rejected record |
+| `governance check` | The review records, the semantic reviews, and the conflicts are valid | A record breaks its contract, names something that does not exist, or leaves a Standard that claims to be verified without clearing the gates |
+| `conflicts check` | The conflict records are valid and no confirmed conflict is open | A record breaks its contract, names something that does not exist, or a confirmed conflict is still open |
 | `coverage` | Always | Never. A standard without a Skill is reported, not failed |
 | `report` | Always | Never. The report states what it found |
 | `compare` | The two reports describe the same evaluation | They do not, so they were not compared |
+
+The commands that check are enforcing, and each of them checks the
+whole of its own domain: the records of that domain against their
+contracts, and the references they make. A problem in another domain
+is reported by `validate`, which checks everything.
+
+The commands that report only show a state. They never fail, so
+they can be used to look at the repository without turning it into a
+gate.
 
 A finding that is only advisory, such as a stale record of a
 Standard that is still in `draft`, never changes an exit code. The
