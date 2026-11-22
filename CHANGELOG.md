@@ -69,6 +69,16 @@
 - A suite that names no case is refused. The counts of failures,
   errors, and skips are all zero for an empty suite, so the suite
   reported a pass without running anything.
+- The three fixture problems are kept apart: a fixture that is
+  missing, a fixture that leaves the repository, and a fixture that
+  exists but cannot be read. The first two were already an error.
+  The third ended the whole run instead of failing its own case.
+- A fixture that exists and is empty is content, not a problem. It
+  is evaluated as the empty text, which is what an excludes
+  assertion holds for. A missing fixture is never read as an empty
+  text, because that would report an unusable case as qualified.
+- The declared output fixture is not required when the caller
+  supplies the output.
 
 
 ## [0.2.0] - 2026-11-22

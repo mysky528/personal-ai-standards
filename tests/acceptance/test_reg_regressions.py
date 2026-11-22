@@ -17,6 +17,7 @@ fixes, and each of them failed against the v0.2.0 implementation.
 | REG-009 | The command line module still described a single command, and the validator still carried an old version |
 | REG-010 | The exit code contract was stated in one place and contradicted in another, and no test held it |
 | REG-011 | A suite that named no case was reported as a success, because the counts of failures, errors, and skips were all zero |
+| REG-012 | A fixture that exists but cannot be read ended the whole run instead of failing its own case, and the declared output fixture was required even when the caller supplied the output |
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ from paisl.evaluation import (
     evaluate_case,
     run_suite,
 )
-from paisl.evaluators import ERROR, PASS, SKIP
+from paisl.evaluators import ERROR, FAIL, PASS, SKIP
 from paisl.evaluators.regex import RegexEvaluator
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -59,6 +60,7 @@ def _case(
     input_path: str = "evaluations/fixtures/comm-001-input.txt",
     output_path: str = "evaluations/fixtures/comm-001-output.txt",
     text: str = "Restart the service",
+    evaluator: str = "contains",
 ) -> dict:
     return {
         "id": case_id,
@@ -70,7 +72,7 @@ def _case(
         "assertions": [
             {
                 "id": "A001",
-                "evaluator": "contains",
+                "evaluator": evaluator,
                 "params": {"text": text},
                 "severity": "must",
             }
@@ -614,3 +616,165 @@ def test_reg011_a_suite_with_cases_still_passes(repo_copy):
     result = _cli(repo_copy, "evaluate", "--suite", "core-regression")
 
     assert result.returncode == 0
+
+
+# --- REG-012 ---------------------------------------------------------
+
+def test_reg012_an_unreadable_fixture_fails_only_its_case(repo_copy):
+    """A fixture that cannot be read fails its case, not the run.
+
+    The three problems stay apart: a fixture that is missing, a
+    fixture that leaves the repository, and a fixture that exists
+    but cannot be read.
+    """
+    (repo_copy / "evaluations" / "fixtures" / "binary.txt").write_bytes(
+        b"\xff\xfe\x00\x01 not text"
+    )
+
+    _write(repo_copy, "evaluations/cases/REG-BAD-CASE-001.yaml", _case(
+        "REG-BAD-CASE-001",
+        output_path="evaluations/fixtures/binary.txt",
+    ))
+    _write(
+        repo_copy,
+        "evaluations/suites/reg-suite.yaml",
+        _suite(["REG-BAD-CASE-001", "REG-GOOD-CASE-001"]),
+    )
+    _write(repo_copy, "evaluations/cases/REG-GOOD-CASE-001.yaml", _case(
+        "REG-GOOD-CASE-001",
+    ))
+
+    result = _cli(
+        repo_copy, "evaluate", "--suite", "reg-suite", "--format", "json"
+    )
+
+    payload = json.loads(result.stdout)
+    cases = {case["id"]: case for case in payload["cases"]}
+
+    assert cases["REG-BAD-CASE-001"]["status"] == ERROR
+    assert "could not be read" in (
+        cases["REG-BAD-CASE-001"]["assertions"][0]["message"]
+    )
+    assert cases["REG-GOOD-CASE-001"]["status"] == PASS, (
+        "an unreadable fixture must not end the whole run"
+    )
+
+
+def test_reg012_a_missing_fixture_is_not_an_empty_one(repo_copy):
+    """A missing fixture never turns into empty content.
+
+    An excludes assertion holds for the empty text, so a missing
+    fixture that was read as an empty text would report a pass.
+    """
+    _write(repo_copy, "evaluations/cases/REG-MISS-CASE-001.yaml", _case(
+        "REG-MISS-CASE-001",
+        output_path="evaluations/fixtures/absent.txt",
+    ))
+    _write(
+        repo_copy,
+        "evaluations/suites/reg-suite.yaml",
+        _suite(["REG-MISS-CASE-001"]),
+    )
+
+    result = _cli(
+        repo_copy, "evaluate", "--suite", "reg-suite", "--format", "json"
+    )
+
+    payload = json.loads(result.stdout)
+    case = payload["cases"][0]
+
+    assert case["status"] == ERROR
+    assert "missing" in case["assertions"][0]["message"]
+
+
+def test_reg012_an_empty_fixture_is_content(repo_copy):
+    """A fixture that exists and is empty is content, not a problem."""
+    (repo_copy / "evaluations" / "fixtures" / "empty.txt").write_text(
+        "", encoding="utf-8"
+    )
+
+    _write(repo_copy, "evaluations/cases/REG-EMPTY-CASE-001.yaml", _case(
+        "REG-EMPTY-CASE-001",
+        output_path="evaluations/fixtures/empty.txt",
+    ))
+    _write(
+        repo_copy,
+        "evaluations/suites/reg-suite.yaml",
+        _suite(["REG-EMPTY-CASE-001"]),
+    )
+
+    result = _cli(
+        repo_copy, "evaluate", "--suite", "reg-suite", "--format", "json"
+    )
+
+    payload = json.loads(result.stdout)
+    case = payload["cases"][0]
+
+    assert case["status"] == FAIL, (
+        "an empty fixture is content, so a contains assertion fails on it "
+        "rather than the case being an error"
+    )
+    assert "could not be read" not in case["assertions"][0]["message"]
+
+
+def test_reg012_an_empty_fixture_satisfies_an_excludes_assertion(repo_copy):
+    """An empty file holds for an excludes assertion.
+
+    This is the reason a missing fixture must not be read as an
+    empty text: the difference between the two is the difference
+    between a qualified output and an unusable case.
+    """
+    (repo_copy / "evaluations" / "fixtures" / "empty.txt").write_text(
+        "", encoding="utf-8"
+    )
+
+    _write(repo_copy, "evaluations/cases/REG-EXCL-CASE-001.yaml", _case(
+        "REG-EXCL-CASE-001",
+        output_path="evaluations/fixtures/empty.txt",
+        text="maybe restart",
+        evaluator="excludes",
+    ))
+    _write(
+        repo_copy,
+        "evaluations/suites/reg-suite.yaml",
+        _suite(["REG-EXCL-CASE-001"]),
+    )
+
+    result = _cli(
+        repo_copy, "evaluate", "--suite", "reg-suite", "--format", "json"
+    )
+
+    payload = json.loads(result.stdout)
+    case = payload["cases"][0]
+
+    assert case["status"] == PASS
+
+
+def test_reg012_a_supplied_output_replaces_the_declared_fixture(repo_copy):
+    """The declared output fixture is not required when the caller supplies one."""
+    _write(repo_copy, "evaluations/cases/REG-SUP-CASE-001.yaml", _case(
+        "REG-SUP-CASE-001",
+        output_path="evaluations/fixtures/absent.txt",
+    ))
+
+    output = repo_copy / ".paisl" / "outputs" / "supplied.txt"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("Restart the service.\n", encoding="utf-8")
+
+    result = _cli(
+        repo_copy,
+        "evaluate",
+        "--case",
+        "REG-SUP-CASE-001",
+        "--output-file",
+        str(output),
+        "--format",
+        "json",
+    )
+
+    assert result.returncode == 0, result.stdout
+
+    payload = json.loads(result.stdout)
+    case = payload["cases"][0]
+
+    assert case["status"] == PASS

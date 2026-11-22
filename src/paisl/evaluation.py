@@ -159,47 +159,61 @@ class SuiteResult:
         }
 
 
-def resolve_fixture(root: Path, relative: str) -> str | None:
-    """Read a fixture that must stay inside the repository.
+def read_fixture(
+    root: Path, relative, role: str
+) -> tuple:
+    """Read a fixture and say why it cannot be used.
 
-    Returns None when the fixture cannot be used: the path leaves the
-    repository, or the file does not exist.
+    Returns the text of the fixture and, when it cannot be used, the
+    reason. A fixture that exists and is empty is content, not a
+    problem: it is read as the empty text.
+
+    The three problems are kept apart, because they mean different
+    things: a fixture that is missing, a fixture that leaves the
+    repository, and a fixture that exists but cannot be read.
     """
     if not isinstance(relative, str) or not relative:
-        return None
+        return None, f"The case does not declare a {role} fixture."
 
     candidate = (root / relative).resolve()
 
     if not candidate.is_relative_to(root.resolve()):
-        return None
+        return None, f"The {role} fixture leaves the repository: {relative}"
 
     if not candidate.is_file():
-        return None
+        return None, f"The {role} fixture is missing: {relative}"
 
-    return candidate.read_text(encoding="utf-8")
+    try:
+        return candidate.read_text(encoding="utf-8"), None
+    except (OSError, UnicodeDecodeError) as exc:
+        return None, (
+            f"The {role} fixture could not be read: {relative} ({exc})"
+        )
 
 
-def fixture_problem(root: Path, fixture: dict) -> str | None:
-    """Return why a fixture cannot be used, or None when it is fine.
-
-    A fixture that is missing is not a rule that failed. The case
-    could not run, and the report has to say so.
-    """
-    for key in ("input", "output"):
-        relative = fixture.get(key)
-
-        if not isinstance(relative, str) or not relative:
-            return f"The case does not declare a {key} fixture."
-
-        candidate = (root / relative).resolve()
-
-        if not candidate.is_relative_to(root.resolve()):
-            return f"The {key} fixture leaves the repository: {relative}"
-
-        if not candidate.is_file():
-            return f"The {key} fixture is missing: {relative}"
-
-    return None
+def fixture_error(
+    case_id: str, standard_id: str, rule_ids: list, message: str
+) -> "CaseResult":
+    """Build the result of a case whose fixture cannot be used."""
+    return CaseResult(
+        id=case_id,
+        standard_id=standard_id,
+        rule_ids=rule_ids,
+        status=ERROR,
+        assertions=[
+            AssertionResult(
+                id="A000",
+                evaluator="fixture",
+                severity="must",
+                status=ERROR,
+                message=message,
+                details={},
+            )
+        ],
+        input_digest="",
+        output_digest="",
+        output_excerpt="",
+    )
 
 
 def evaluate_case(
@@ -227,33 +241,22 @@ def evaluate_case(
 
     fixture = case.get("fixture", {}) or {}
 
-    problem = fixture_problem(root, fixture)
+    input_text, problem = read_fixture(root, fixture.get("input"), "input")
 
     if problem is not None:
-        return CaseResult(
-            id=case_id,
-            standard_id=standard_id,
-            rule_ids=rule_ids,
-            status=ERROR,
-            assertions=[
-                AssertionResult(
-                    id="A000",
-                    evaluator="fixture",
-                    severity="must",
-                    status=ERROR,
-                    message=problem,
-                    details={"fixture": fixture},
-                )
-            ],
-            input_digest="",
-            output_digest="",
-            output_excerpt="",
+        return fixture_error(
+            case_id, standard_id, rule_ids, problem
         )
 
-    input_text = resolve_fixture(root, fixture.get("input", "")) or ""
-
     if output_text is None:
-        output_text = resolve_fixture(root, fixture.get("output", "")) or ""
+        output_text, problem = read_fixture(
+            root, fixture.get("output"), "output"
+        )
+
+        if problem is not None:
+            return fixture_error(
+                case_id, standard_id, rule_ids, problem
+            )
 
     results: list = []
 

@@ -18,7 +18,7 @@ from paisl.evaluation import (
     redact,
     render_evaluation_json,
     render_evaluation_markdown,
-    resolve_fixture,
+    read_fixture,
     run_suite,
 )
 
@@ -144,11 +144,24 @@ def test_redaction_covers_common_shapes():
 
 def test_a_fixture_outside_the_repository_is_not_read(repo_root):
     """A fixture that leaves the repository is never resolved."""
-    assert resolve_fixture(repo_root, "../outside.txt") is None
-    assert resolve_fixture(repo_root, "evaluations/fixtures/absent.txt") is None
-    assert resolve_fixture(
-        repo_root, "evaluations/fixtures/comm-001-input.txt"
-    ) is not None
+    text, problem = read_fixture(repo_root, "../outside.txt", "input")
+
+    assert text is None
+    assert "leaves the repository" in problem
+
+    text, problem = read_fixture(
+        repo_root, "evaluations/fixtures/absent.txt", "input"
+    )
+
+    assert text is None
+    assert "missing" in problem
+
+    text, problem = read_fixture(
+        repo_root, "evaluations/fixtures/comm-001-input.txt", "input"
+    )
+
+    assert problem is None
+    assert text
 
 
 def test_the_report_has_a_markdown_form(repo_root):
