@@ -180,7 +180,9 @@ def test_the_report_has_a_json_form(repo_root):
 
     assert payload["suite_id"] == "core-regression"
     assert payload["status"] == "passed"
-    assert payload["summary"] == {
-        "pass": 1, "fail": 0, "skip": 0, "error": 0,
-    }
+    assert payload["summary"]["pass"] == 1
+    assert payload["summary"]["fail"] == 0
+    assert payload["summary"]["skip"] == 0
+    assert payload["summary"]["error"] == 0
+    assert payload["summary"]["assertions"]["pass"] == 2
     assert payload["cases"][0]["output_digest"]

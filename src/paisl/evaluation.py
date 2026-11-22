@@ -314,7 +314,15 @@ def evaluate_case(
 
 
 def _case_status(results: list) -> str:
-    """Aggregate the assertion outcomes into the status of a case."""
+    """Aggregate the assertion outcomes into the status of a case.
+
+    A case that verified nothing is not a pass. This covers a case
+    without any assertion and a case whose assertions were all
+    skipped.
+    """
+    if not results:
+        return SKIP
+
     if any(item.status == ERROR for item in results):
         return ERROR
 
@@ -327,7 +335,7 @@ def _case_status(results: list) -> str:
     ):
         return SKIP
 
-    if results and all(item.status == SKIP for item in results):
+    if all(item.status == SKIP for item in results):
         # Nothing was verified, so the case did not pass either.
         return SKIP
 
@@ -386,9 +394,19 @@ def run_suite(
         results.append(evaluate_case(root, case, output_text))
 
     summary = {"pass": 0, "fail": 0, "skip": 0, "error": 0}
+    assertions = {"pass": 0, "fail": 0, "skip": 0, "error": 0}
 
     for result in results:
         summary[result.status] = summary.get(result.status, 0) + 1
+
+        for item in result.assertions:
+            assertions[item.status] = assertions.get(item.status, 0) + 1
+
+    # The counts of the cases stay the four that the design names. The
+    # counts of the assertions are added beside them, because a
+    # skipped optional assertion is otherwise invisible in the
+    # summary.
+    summary["assertions"] = assertions
 
     input_digest = digest_text("\n".join(
         f"{case.get('id', '')}:{case_definition_digest(case)}:"

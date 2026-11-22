@@ -690,6 +690,14 @@ def _load_cases(root: Path, suite: dict, errors: list) -> list:
         case = read_yaml(path)
 
         if isinstance(case, dict):
+            assertions = case.get("assertions")
+
+            if not isinstance(assertions, list) or not assertions:
+                errors.append(
+                    f"The evaluation case {case_id} declares no assertion."
+                )
+                continue
+
             cases.append(case)
 
     if not cases and not errors:

@@ -302,6 +302,30 @@ python -m paisl report --suite core-regression
 python -m paisl compare --baseline old.json --current new.json
 ```
 
+#### How the outcomes are aggregated
+
+An assertion ends in `pass`, `fail`, `skip`, or `error`. A case
+aggregates them:
+
+| The assertions of a case | The status of the case |
+|---|---|
+| One of them errored | `error` |
+| One of them failed | `fail` |
+| A mandatory one was skipped | `skip` |
+| All of them were skipped | `skip` |
+| There are none | `skip` |
+| Otherwise | `pass` |
+
+A case that verified nothing is not a pass. A skipped mandatory
+assertion never counts as one, and a case without any assertion is
+refused by the command.
+
+A case may pass while an optional assertion was skipped, because the
+mandatory assertions held. The report keeps the four case counts that
+the design names, and adds the counts of the assertions beside them,
+so that a skipped assertion is visible in the summary and not only
+in the detail of a case.
+
 #### Exit codes
 
 | Code | Meaning |

@@ -18,6 +18,7 @@ fixes, and each of them failed against the v0.2.0 implementation.
 | REG-010 | The exit code contract was stated in one place and contradicted in another, and no test held it |
 | REG-011 | A suite that named no case was reported as a success, because the counts of failures, errors, and skips were all zero |
 | REG-012 | A fixture that exists but cannot be read ended the whole run instead of failing its own case, and the declared output fixture was required even when the caller supplied the output |
+| REG-013 | A case that verified nothing counted as a success, and a skipped optional assertion was invisible in the summary |
 """
 
 from __future__ import annotations
@@ -778,3 +779,111 @@ def test_reg012_a_supplied_output_replaces_the_declared_fixture(repo_copy):
     case = payload["cases"][0]
 
     assert case["status"] == PASS
+
+
+# --- REG-013 ---------------------------------------------------------
+
+def test_reg013_a_case_without_assertions_is_not_a_pass():
+    """A case that verified nothing is not a pass."""
+    from paisl.evaluation import _case_status
+
+    assert _case_status([]) == SKIP, (
+        "a case without an assertion must not count as a success"
+    )
+
+
+def test_reg013_a_case_without_assertions_is_refused(repo_copy):
+    """The command refuses a case that declares no assertion."""
+    case = _case("REG-EMPTY-CASE-001")
+    case["assertions"] = []
+
+    _write(repo_copy, "evaluations/cases/REG-EMPTY-CASE-001.yaml", case)
+    _write(
+        repo_copy,
+        "evaluations/suites/reg-suite.yaml",
+        _suite(["REG-EMPTY-CASE-001"]),
+    )
+
+    result = _cli(repo_copy, "evaluate", "--suite", "reg-suite")
+
+    assert result.returncode == 1, (
+        "a case that declares no assertion must not report a success"
+    )
+    assert "no assertion" in result.stdout
+
+
+def test_reg013_a_skipped_assertion_is_visible_in_the_summary(repo_copy):
+    """A skipped assertion is counted in the summary.
+
+    The case counts stay the four that the design names. The counts
+    of the assertions sit beside them, because a skipped optional
+    assertion is otherwise invisible.
+    """
+    case = _case("REG-SKIP-CASE-001")
+    case["assertions"] = [
+        {
+            "id": "A001",
+            "evaluator": "contains",
+            "params": {"text": "Restart the service"},
+            "severity": "must",
+        },
+        {
+            "id": "A002",
+            "evaluator": "contains",
+            "params": {"text": "never there"},
+            "severity": "should",
+        },
+    ]
+
+    _write(repo_copy, "evaluations/cases/REG-SKIP-CASE-001.yaml", case)
+    _write(
+        repo_copy,
+        "evaluations/suites/reg-suite.yaml",
+        _suite(["REG-SKIP-CASE-001"]),
+    )
+
+    result = _cli(
+        repo_copy, "evaluate", "--suite", "reg-suite", "--format", "json"
+    )
+
+    payload = json.loads(result.stdout)
+
+    assert "assertions" in payload["summary"], (
+        "the summary must count the assertions, not only the cases"
+    )
+    assert set(payload["summary"]["assertions"]) == {
+        "pass", "fail", "skip", "error",
+    }
+
+    # The four case counts that the design names are still there.
+    for key in ("pass", "fail", "skip", "error"):
+        assert key in payload["summary"]
+
+
+def test_reg013_a_skipped_case_is_counted(repo_copy):
+    """A case that the caller skips is counted as skipped."""
+    _write(repo_copy, "evaluations/cases/REG-CASE-001.yaml", _case("REG-CASE-001"))
+    _write(
+        repo_copy,
+        "evaluations/suites/reg-suite.yaml",
+        _suite(["REG-CASE-001"]),
+    )
+
+    result = _cli(
+        repo_copy,
+        "evaluate",
+        "--suite",
+        "reg-suite",
+        "--skip",
+        "REG-CASE-001",
+        "--format",
+        "json",
+    )
+
+    payload = json.loads(result.stdout)
+
+    assert payload["summary"]["skip"] == 1
+    assert payload["summary"]["pass"] == 0
+    assert result.returncode == 1, (
+        "a suite whose only case was skipped does not pass"
+    )

@@ -79,6 +79,13 @@
   text, because that would report an unusable case as qualified.
 - The declared output fixture is not required when the caller
   supplies the output.
+- A case that verified nothing is not a pass. A case without any
+  assertion was counted as a success, and a case whose assertions
+  were all skipped could be counted as one as well. A case without an
+  assertion is now refused by the command.
+- The report counts the assertions beside the counts of the cases, so
+  that a skipped optional assertion is visible in the summary and
+  not only in the detail of a case.
 
 
 ## [0.2.0] - 2026-11-22
