@@ -16,6 +16,7 @@ fixes, and each of them failed against the v0.2.0 implementation.
 | REG-008 | An output file given on the command line was applied to every case of a suite |
 | REG-009 | The command line module still described a single command, and the validator still carried an old version |
 | REG-010 | The exit code contract was stated in one place and contradicted in another, and no test held it |
+| REG-011 | A suite that named no case was reported as a success, because the counts of failures, errors, and skips were all zero |
 """
 
 from __future__ import annotations
@@ -561,3 +562,55 @@ def test_reg010_the_exit_codes_follow_the_contract(repo_copy):
     assert _cli(repo_copy, "evaluate", "--suite", "absent").returncode == (
         EXIT_USAGE
     )
+
+
+# --- REG-011 ---------------------------------------------------------
+
+def test_reg011_a_suite_without_cases_is_not_a_pass():
+    """A suite that ran nothing does not pass."""
+    from paisl.evaluation import SuiteResult
+
+    empty = SuiteResult(
+        suite_id="empty",
+        suite_version="1",
+        evaluator_version="1",
+        run_id="",
+        input_digest="",
+        summary={"pass": 0, "fail": 0, "skip": 0, "error": 0},
+        cases=[],
+    )
+
+    assert empty.passed is False, (
+        "a suite that ran no case must not report a pass"
+    )
+
+
+def test_reg011_an_empty_suite_is_refused(repo_copy):
+    """The command refuses a suite that names no case."""
+    _write(
+        repo_copy,
+        "evaluations/suites/empty-suite.yaml",
+        {
+            "id": "empty-suite",
+            "schema_version": "0.2.0",
+            "version": "0.2.1",
+            "title": {"en": "Empty", "zh-CN": "空"},
+            "description": {"en": "No case.", "zh-CN": "没有用例。"},
+            "required": False,
+            "cases": [],
+        },
+    )
+
+    result = _cli(repo_copy, "evaluate", "--suite", "empty-suite")
+
+    assert result.returncode == 1, (
+        "a suite that names no case must not report a success"
+    )
+    assert "no case" in result.stdout
+
+
+def test_reg011_a_suite_with_cases_still_passes(repo_copy):
+    """The fix does not turn a real suite into a failure."""
+    result = _cli(repo_copy, "evaluate", "--suite", "core-regression")
+
+    assert result.returncode == 0

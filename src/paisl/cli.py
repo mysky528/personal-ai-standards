@@ -665,11 +665,22 @@ def _load_suite(root: Path, suite_id: str, errors: list):
 
 
 def _load_cases(root: Path, suite: dict, errors: list) -> list:
-    """Load the cases a suite names."""
+    """Load the cases a suite names.
+
+    A suite that names no case is refused. Otherwise the evaluation
+    would run nothing and report success.
+    """
     directory = root / "evaluations" / "cases"
     cases: list = []
+    names = suite.get("cases", [])
 
-    for case_id in suite.get("cases", []):
+    if not isinstance(names, list) or not names:
+        errors.append(
+            f"The evaluation suite {suite.get('id', '')!r} names no case."
+        )
+        return cases
+
+    for case_id in names:
         path = directory / f"{case_id}.yaml"
 
         if not path.is_file():
@@ -680,6 +691,11 @@ def _load_cases(root: Path, suite: dict, errors: list) -> list:
 
         if isinstance(case, dict):
             cases.append(case)
+
+    if not cases and not errors:
+        errors.append(
+            f"The evaluation suite {suite.get('id', '')!r} names no case."
+        )
 
     return cases
 

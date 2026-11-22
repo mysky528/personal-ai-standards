@@ -130,8 +130,15 @@ class SuiteResult:
     def passed(self) -> bool:
         """A suite passes when every case passed.
 
+        A suite that ran nothing does not pass. Without this
+        condition an empty suite would report success, because the
+        counts of failures, errors, and skips are all zero.
+
         A skipped mandatory assertion never counts as a pass.
         """
+        if not self.cases:
+            return False
+
         return (
             self.summary.get("fail", 0) == 0
             and self.summary.get("error", 0) == 0

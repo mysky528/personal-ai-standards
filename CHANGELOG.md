@@ -66,6 +66,9 @@
 - The command line module no longer describes a single command, and
   the report uses the required suite when no suite is given.
 - The exit code contract is stated per command and held by a test.
+- A suite that names no case is refused. The counts of failures,
+  errors, and skips are all zero for an empty suite, so the suite
+  reported a pass without running anything.
 
 
 ## [0.2.0] - 2026-11-22
