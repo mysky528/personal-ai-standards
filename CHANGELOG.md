@@ -15,6 +15,7 @@ implemented yet.
 - `python -m paisl coverage` command with text and JSON reports
 - `python -m paisl evidence check` command with text and JSON reports
 - `python -m paisl governance check` command with text and JSON reports
+- `python -m paisl evaluate` command with text, JSON, and Markdown reports
 - `paisl` console script entry point
 - Test suite covering validator equivalence and CLI behaviour
 - Data contracts for evidence records, rule evidence links,
@@ -22,6 +23,8 @@ implemented yet.
   suites, and conflict records
 - Reference instances of the new contracts under `evidence/`,
   `governance/`, and `evaluations/`
+- Four deterministic evaluators: `contains`, `excludes`, `regex`,
+  and `json_path`
 
 ### Changed
 - The validator implementation moved from `scripts/validate.py` into
@@ -37,6 +40,10 @@ implemented yet.
 - The continuous integration workflow fetches the full history, so
   the lifecycle checks can prove that a published review record was
   not modified.
+- The promotion gate for the evaluation cases now runs the evaluation
+  engine instead of reporting that the engine is missing.
+- The reference evaluation case checks for the action phrase rather
+  than the full sentence, so it matches the wording of its fixture.
 
 ### Compatibility
 - `python scripts/validate.py` keeps the same output and exit codes

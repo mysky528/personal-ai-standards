@@ -197,6 +197,58 @@ Git branches, CODEOWNERS, and required GitHub review rules. The local
 checks establish record integrity, never identity authenticity, and
 the report says so rather than claiming a check it cannot make.
 
+### Evaluation engine
+
+`python -m paisl evaluate --suite core-regression` runs a suite of
+cases and reports the outcome in text, JSON, or Markdown.
+
+```bash
+python -m paisl evaluate --suite core-regression
+python -m paisl evaluate --case COMM-001-CASE-001 \
+  --output-file .paisl/outputs/comm-001.txt
+```
+
+The engine loads a suite, loads the cases it names, resolves the
+fixtures, runs the assertions, and produces the report. Only four
+evaluators may run, and the evaluation contract allowlists their
+names, so a case cannot select executable code.
+
+| Evaluator | Checks |
+|---|---|
+| `contains` | The output contains an exact substring |
+| `excludes` | The output does not contain a substring |
+| `regex` | The output matches a pattern |
+| `json_path` | A value inside a JSON output |
+
+The path syntax addresses object keys and numeric array indices
+separated by dots. It is not JSONPath: it has no filters, no
+wildcards, and no recursive descent.
+
+An assertion ends in `pass`, `fail`, `skip`, or `error`. An invalid
+fixture, an unknown evaluator, and a failure inside the engine are
+errors rather than failures. A skipped mandatory assertion never
+counts as a pass, so skipping a case of a required suite fails the
+suite.
+
+#### Reproducibility
+
+The same inputs always produce the same report. The report holds no
+timestamp, no random identifier, and no absolute path. The run
+identifier is derived from the content of the suite, the cases, and
+the evaluated outputs, and the input digest identifies the material
+that was evaluated.
+
+#### Safety
+
+A regular expression can match without end, so the `regex` evaluator
+limits the length of a pattern and of the input, refuses constructs
+that can backtrack without end, and bounds how long a single match
+may run.
+
+A report never carries the material it evaluated. It holds digests
+and a short excerpt, and anything that looks like a credential is
+removed from the excerpt.
+
 ### Command line interface
 
 Only the `validate` command exists so far.

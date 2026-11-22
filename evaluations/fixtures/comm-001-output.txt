@@ -1,8 +1,3 @@
 SPDX-License-Identifier: CC-BY-4.0
 
-Output fixture for COMM-001-CASE-001.
-
-The instruction below is the expected shape of the improved
-instruction: one action, one object, one trigger.
-
 Restart the service when it stops responding.

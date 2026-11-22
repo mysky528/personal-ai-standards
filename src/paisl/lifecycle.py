@@ -359,12 +359,36 @@ def promotion_gates(
     ))
 
     # Gate 5: the mandatory evaluation cases pass.
-    gates.append(Gate(
-        "mandatory-evaluation-cases",
-        "The mandatory evaluation cases of the Standard pass.",
-        NOT_SATISFIED,
-        "the evaluation engine is not implemented yet",
-    ))
+    from .evaluation import evaluate_standard
+
+    cases = [
+        record.data
+        for record in records
+        if record.kind == "evaluation-case"
+    ]
+    outcome = evaluate_standard(root, sid, cases)
+
+    if not outcome["cases"]:
+        gates.append(Gate(
+            "mandatory-evaluation-cases",
+            "The mandatory evaluation cases of the Standard pass.",
+            NOT_SATISFIED,
+            f"{sid} has no evaluation case",
+        ))
+    elif outcome["failed"]:
+        gates.append(Gate(
+            "mandatory-evaluation-cases",
+            "The mandatory evaluation cases of the Standard pass.",
+            NOT_SATISFIED,
+            f"failing cases: {', '.join(outcome['failed'])}",
+        ))
+    else:
+        gates.append(Gate(
+            "mandatory-evaluation-cases",
+            "The mandatory evaluation cases of the Standard pass.",
+            SATISFIED,
+            f"{outcome['passed']} of {outcome['cases']} cases passed",
+        ))
 
     # Gate 6: an approved review record that matches the content.
     matching = [

@@ -23,8 +23,15 @@ from .errors import (
     EXIT_USAGE,
     EXIT_VALIDATION,
     PaislError,
+    UsageError,
 )
 from .coverage import build_coverage, validate_skills
+from .evaluation import (
+    render_evaluation_json,
+    render_evaluation_markdown,
+    render_evaluation_text,
+    run_suite,
+)
 from .evidence import check_evidence, evidence_coverage
 from .lifecycle import (
     check_review_records,
@@ -33,7 +40,7 @@ from .lifecycle import (
     promotion_gates,
 )
 from .licensing import validate_license_scope
-from .paths import find_repo_root
+from .paths import find_repo_root, read_yaml
 from .registry import (
     build_standard_index,
     load_catalog,
@@ -189,6 +196,54 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="List the gates of every Standard, not only those in the "
         "promotion path.",
+    )
+
+    evaluate_parser = subparsers.add_parser(
+        "evaluate",
+        help="Run an evaluation suite or a single evaluation case.",
+    )
+    evaluate_parser.add_argument(
+        "--repo",
+        type=Path,
+        default=None,
+        help="Repository root. Defaults to the current directory.",
+    )
+    evaluate_parser.add_argument(
+        "--suite",
+        type=str,
+        default=None,
+        help="The suite to run, for example core-regression.",
+    )
+    evaluate_parser.add_argument(
+        "--case",
+        type=str,
+        default=None,
+        help="A single case to run instead of a suite.",
+    )
+    evaluate_parser.add_argument(
+        "--output-file",
+        type=Path,
+        default=None,
+        help="Evaluate this file instead of the fixture of the case.",
+    )
+    evaluate_parser.add_argument(
+        "--skip",
+        action="append",
+        default=[],
+        dest="skip_cases",
+        help="Skip a case. May be given more than once.",
+    )
+    evaluate_parser.add_argument(
+        "--format",
+        choices=("text", "json", "markdown"),
+        default="text",
+        help="Report format.",
+    )
+    evaluate_parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Write the report to this file instead of standard output.",
     )
 
     return parser
@@ -424,6 +479,123 @@ def _run_governance_check(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def _load_suite(root: Path, suite_id: str, errors: list):
+    """Load one evaluation suite."""
+    path = root / "evaluations" / "suites" / f"{suite_id}.yaml"
+
+    if not path.is_file():
+        errors.append(f"Unknown evaluation suite: {suite_id}")
+        return None
+
+    suite = read_yaml(path)
+
+    if not isinstance(suite, dict):
+        errors.append(f"{path.relative_to(root)}: expected YAML mapping")
+        return None
+
+    return suite
+
+
+def _load_cases(root: Path, suite: dict, errors: list) -> list:
+    """Load the cases a suite names."""
+    directory = root / "evaluations" / "cases"
+    cases: list = []
+
+    for case_id in suite.get("cases", []):
+        path = directory / f"{case_id}.yaml"
+
+        if not path.is_file():
+            errors.append(f"Unknown evaluation case: {case_id}")
+            continue
+
+        case = read_yaml(path)
+
+        if isinstance(case, dict):
+            cases.append(case)
+
+    return cases
+
+
+def _run_evaluate(args: argparse.Namespace) -> int:
+    errors: list = []
+
+    try:
+        root = args.repo.resolve() if args.repo else find_repo_root()
+
+        if args.case and args.suite:
+            raise UsageError("Use either --case or --suite, not both.")
+
+        if not args.case and not args.suite:
+            raise UsageError("An evaluation needs --suite or --case.")
+
+        if args.case:
+            case_path = root / "evaluations" / "cases" / f"{args.case}.yaml"
+
+            if not case_path.is_file():
+                raise UsageError(f"Unknown evaluation case: {args.case}")
+
+            case = read_yaml(case_path)
+
+            if not isinstance(case, dict):
+                raise UsageError(f"{args.case}: expected YAML mapping")
+
+            suite = {
+                "id": args.case,
+                "version": case.get("schema_version", ""),
+                "cases": [args.case],
+            }
+            cases = [case]
+        else:
+            suite = _load_suite(root, args.suite, errors)
+
+            if suite is None:
+                raise UsageError(f"Unknown evaluation suite: {args.suite}")
+
+            cases = _load_cases(root, suite, errors)
+
+        if errors:
+            for message in errors:
+                print(f"ERROR: {message}")
+            return EXIT_VALIDATION
+
+        output_text = None
+
+        if args.output_file is not None:
+            candidate = args.output_file.resolve()
+
+            if not candidate.is_file():
+                raise UsageError(
+                    f"The output file does not exist: {args.output_file}"
+                )
+
+            output_text = candidate.read_text(encoding="utf-8")
+
+        result = run_suite(
+            root,
+            suite,
+            cases,
+            skip_cases=tuple(args.skip_cases),
+            output_text=output_text,
+        )
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        print(f"ERROR: Initialization failed: {exc}")
+        return EXIT_VALIDATION
+    except PaislError as exc:
+        print(f"ERROR: {exc}")
+        return exc.exit_code
+
+    if args.format == "json":
+        report = render_evaluation_json(result)
+    elif args.format == "markdown":
+        report = render_evaluation_markdown(result)
+    else:
+        report = render_evaluation_text(result)
+
+    _write_report(report, args.output)
+
+    return EXIT_SUCCESS if result.passed else EXIT_VALIDATION
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the command line interface."""
     parser = build_parser()
@@ -442,6 +614,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "governance":
         if args.governance_command == "check":
             return _run_governance_check(args)
+
+    if args.command == "evaluate":
+        return _run_evaluate(args)
 
     parser.error(f"Unknown command: {args.command}")
 

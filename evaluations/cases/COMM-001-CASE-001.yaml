@@ -12,7 +12,7 @@ assertions:
   - id: A001
     evaluator: contains
     params:
-      text: "Restart the service."
+      text: "Restart the service"
     severity: must
   - id: A002
     evaluator: excludes
