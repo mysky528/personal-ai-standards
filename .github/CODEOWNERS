@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: MIT
+#
+# CODEOWNERS for PAISL.
+#
+# The owners below are asked for a review when a pull request changes
+# a listed path. GitHub treats these rules as review requirements
+# only when the branch enables "Require a pull request before merging"
+# and "Require review for Code Owners".
+#
+# The paths cover the parts of the repository that decide what a
+# Standard means and who may change it. A change to any of them is
+# a governance change, not an editorial one.
+
+# The data contracts. A change here can change what a Standard means.
+/schemas/            @mysky528
+
+# The Standard registry: the definitions and the discovery index.
+/standards/          @mysky528
+/catalog/            @mysky528
+
+# The governance records: evidence, reviews, and declared conflicts.
+/evidence/           @mysky528
+/governance/         @mysky528
+
+# The evaluation material: cases, suites, and fixtures.
+/evaluations/        @mysky528
+
+# The tooling and its tests.
+/src/                 @mysky528
+/scripts/             @mysky528
+/tests/               @mysky528
+
+# The execution instructions that the Agents read.
+/skills/              @mysky528
+
+# The workflow that enforces the rules.
+/.github/             @mysky528

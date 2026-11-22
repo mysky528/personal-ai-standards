@@ -2,6 +2,20 @@
 # Changelog
 
 
+## [Unreleased]
+
+### Added
+- `.github/CODEOWNERS`, naming the owner of every governance critical
+  path
+- A test that keeps the owner list complete, so a new critical
+  directory cannot be added without an owner
+
+### Documentation
+- The governance document now describes the branch settings that
+  complete the reviewer authorisation, and which of them a single
+  maintainer can enable without blocking their own changes
+
+
 ## [0.2.0] - 2026-11-22
 
 The first release of the governance and evaluation tooling. The
