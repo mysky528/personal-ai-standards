@@ -312,7 +312,7 @@ def promotion_gates(
     # Gate 3: reviewed evidence coverage for every rule.
     from .evidence import evidence_coverage
 
-    coverage = evidence_coverage(records)
+    coverage = evidence_coverage(records, root)
     standard_coverage = coverage["standards"].get(sid, {"rules": {}})
     rules = standard_coverage.get("rules", {})
 

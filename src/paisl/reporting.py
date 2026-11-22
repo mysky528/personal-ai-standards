@@ -347,7 +347,7 @@ def build_quality_report(
     )
 
     coverage = build_coverage(root, schema, catalog, records)
-    evidence = evidence_coverage(records)
+    evidence = evidence_coverage(records, root)
 
     if validation is None:
         validation = {

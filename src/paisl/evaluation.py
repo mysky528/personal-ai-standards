@@ -153,7 +153,11 @@ class SuiteResult:
 
 
 def resolve_fixture(root: Path, relative: str) -> str | None:
-    """Read a fixture that must stay inside the repository."""
+    """Read a fixture that must stay inside the repository.
+
+    Returns None when the fixture cannot be used: the path leaves the
+    repository, or the file does not exist.
+    """
     if not isinstance(relative, str) or not relative:
         return None
 
@@ -166,6 +170,29 @@ def resolve_fixture(root: Path, relative: str) -> str | None:
         return None
 
     return candidate.read_text(encoding="utf-8")
+
+
+def fixture_problem(root: Path, fixture: dict) -> str | None:
+    """Return why a fixture cannot be used, or None when it is fine.
+
+    A fixture that is missing is not a rule that failed. The case
+    could not run, and the report has to say so.
+    """
+    for key in ("input", "output"):
+        relative = fixture.get(key)
+
+        if not isinstance(relative, str) or not relative:
+            return f"The case does not declare a {key} fixture."
+
+        candidate = (root / relative).resolve()
+
+        if not candidate.is_relative_to(root.resolve()):
+            return f"The {key} fixture leaves the repository: {relative}"
+
+        if not candidate.is_file():
+            return f"The {key} fixture is missing: {relative}"
+
+    return None
 
 
 def evaluate_case(
@@ -192,6 +219,29 @@ def evaluate_case(
         )
 
     fixture = case.get("fixture", {}) or {}
+
+    problem = fixture_problem(root, fixture)
+
+    if problem is not None:
+        return CaseResult(
+            id=case_id,
+            standard_id=standard_id,
+            rule_ids=rule_ids,
+            status=ERROR,
+            assertions=[
+                AssertionResult(
+                    id="A000",
+                    evaluator="fixture",
+                    severity="must",
+                    status=ERROR,
+                    message=problem,
+                    details={"fixture": fixture},
+                )
+            ],
+            input_digest="",
+            output_digest="",
+            output_excerpt="",
+        )
 
     input_text = resolve_fixture(root, fixture.get("input", "")) or ""
 
@@ -267,7 +317,41 @@ def _case_status(results: list) -> str:
     ):
         return SKIP
 
+    if results and all(item.status == SKIP for item in results):
+        # Nothing was verified, so the case did not pass either.
+        return SKIP
+
     return PASS
+
+
+def case_definition_digest(case: dict) -> str:
+    """Digest of what a case asserts, independent of the material.
+
+    The run identifier has to cover the evaluation definitions. Two
+    cases that read the same fixtures but assert different things are
+    different evaluations, and they must not share an identifier.
+    """
+    payload = {
+        "id": case.get("id", ""),
+        "standard_id": case.get("standard_id", ""),
+        "rule_ids": list(case.get("rule_ids", [])),
+        "assertions": [
+            {
+                "id": assertion.get("id", ""),
+                "evaluator": assertion.get("evaluator", ""),
+                "params": assertion.get("params", {}),
+                "severity": assertion.get("severity", ""),
+            }
+            for assertion in case.get("assertions", [])
+            if isinstance(assertion, dict)
+        ],
+    }
+
+    canonical = json.dumps(
+        payload, sort_keys=True, ensure_ascii=False, default=str
+    )
+
+    return digest_text(canonical)
 
 
 def run_suite(
@@ -297,8 +381,9 @@ def run_suite(
         summary[result.status] = summary.get(result.status, 0) + 1
 
     input_digest = digest_text("\n".join(
-        f"{result.id}:{result.input_digest}:{result.output_digest}"
-        for result in results
+        f"{case.get('id', '')}:{case_definition_digest(case)}:"
+        f"{result.input_digest}:{result.output_digest}"
+        for case, result in zip(cases, results)
     ))
 
     run_id = digest_text(

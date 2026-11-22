@@ -19,16 +19,44 @@ MAX_PATTERN_LENGTH = 512
 MAX_INPUT_LENGTH = 65536
 MATCH_TIMEOUT_SECONDS = 1.0
 
+# The bound that applies when no timer is available.
+FALLBACK_INPUT_LENGTH = 8192
+
 # Constructs that make the backtracking engine work without end.
+# A quantified group whose body carries a quantifier, and a
+# backreference, are the shapes that cost the most.
 DANGEROUS_PATTERNS = (
     r"\([^)]*[+*]\)[+*]",
     r"\([^)]*\{[0-9,]+\}\)[+*]",
     r"\([^)]*\|[^)]*\)[+*]",
+    r"\\\d",
 )
 
 
 class RegexTimeout(Exception):
     """Raised when a match takes longer than the allowed time."""
+
+
+def timeout_available() -> bool:
+    """Report whether a match can be given a time limit here.
+
+    A timer needs SIGALRM and the main thread. Without one, the
+    evaluator has to refuse the dangerous shapes instead.
+    """
+    return (
+        hasattr(signal, "SIGALRM")
+        and hasattr(signal, "setitimer")
+        and threading.current_thread() is threading.main_thread()
+    )
+
+
+def is_dangerous(pattern: str) -> str | None:
+    """Return why a pattern may match without end, or None."""
+    for dangerous in DANGEROUS_PATTERNS:
+        if re.search(dangerous, pattern):
+            return "the pattern uses a construct that can match without end"
+
+    return None
 
 
 def _timeout_handler(signum, frame):
@@ -37,13 +65,7 @@ def _timeout_handler(signum, frame):
 
 def _bounded_search(pattern: str, text: str):
     """Search with a time limit where the platform allows one."""
-    can_signal = (
-        hasattr(signal, "SIGALRM")
-        and hasattr(signal, "setitimer")
-        and threading.current_thread() is threading.main_thread()
-    )
-
-    if not can_signal:
+    if not timeout_available():
         return re.search(pattern, text)
 
     previous = signal.signal(signal.SIGALRM, _timeout_handler)
@@ -81,18 +103,19 @@ class RegexEvaluator:
                 details={"parameter": "pattern", "limit": MAX_PATTERN_LENGTH},
             )
 
-        for dangerous in DANGEROUS_PATTERNS:
-            if re.search(dangerous, pattern):
-                return EvaluationResult(
-                    status=ERROR,
-                    message=(
-                        "The pattern uses a construct that can match "
-                        "without end."
-                    ),
-                    details={"parameter": "pattern"},
-                )
+        # The dangerous shapes are refused everywhere. A timer only
+        # adds a time limit on top, where the platform offers one.
+        danger = is_dangerous(pattern)
 
-        text = output[:MAX_INPUT_LENGTH]
+        if danger is not None:
+            return EvaluationResult(
+                status=ERROR,
+                message=danger,
+                details={"parameter": "pattern"},
+            )
+
+        limit = MAX_INPUT_LENGTH if timeout_available() else FALLBACK_INPUT_LENGTH
+        text = output[:limit]
 
         try:
             match = _bounded_search(pattern, text)
@@ -124,6 +147,6 @@ class RegexEvaluator:
             details={
                 "pattern": pattern,
                 "found": found,
-                "truncated": len(output) > MAX_INPUT_LENGTH,
+                "truncated": len(output) > limit,
             },
         )

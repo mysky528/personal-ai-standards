@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: MIT
 """Command line interface for the PAISL tooling.
 
-Only the `validate` command exists at this stage of v0.2.0. The
-remaining commands are introduced by their work packages; they are
-deliberately absent so that nothing is described as existing before
-it is implemented.
+The commands are `validate`, `coverage`, `evidence check`,
+`governance check`, `conflicts check`, `evaluate`, `report`, and
+`compare`. Every command follows the exit code contract that the
+architecture document states.
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ from .errors import (
 from .coverage import build_coverage, validate_skills
 from .conflicts import (
     bilingual_evaluation_coverage,
+    blocking_conflicts,
     check_conflicts,
     check_semantic_reviews,
     conflict_candidates,
@@ -484,13 +485,17 @@ def run_evidence_coverage(root: Path) -> dict:
     errors: list = []
     records = load_records(root, errors)
 
-    return evidence_coverage(records)
+    return evidence_coverage(records, root)
 
 
 def _run_evidence_check(args: argparse.Namespace) -> int:
     try:
         root = args.repo.resolve() if args.repo else find_repo_root()
-        coverage = run_evidence_coverage(root)
+        errors: list = []
+        warnings: list = []
+        records = load_records(root, errors)
+        check_evidence(records, errors, warnings)
+        coverage = evidence_coverage(records, root)
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"ERROR: Initialization failed: {exc}")
         return EXIT_VALIDATION
@@ -504,6 +509,12 @@ def _run_evidence_check(args: argparse.Namespace) -> int:
         report = render_evidence_text(coverage)
 
     _write_report(report, args.output)
+
+    for message in errors:
+        print(f"ERROR: {message}")
+
+    if errors:
+        return EXIT_VALIDATION
 
     return EXIT_SUCCESS
 
@@ -570,6 +581,30 @@ def _run_governance_check(args: argparse.Namespace) -> int:
     try:
         root = args.repo.resolve() if args.repo else find_repo_root()
         governance = run_governance(root)
+
+        errors: list = []
+        warnings: list = []
+        schema = json.loads(
+            (root / "schemas" / "standard.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validator = build_validator(schema)
+        catalog = load_catalog(root)
+        records = load_records(root, errors)
+        standard_index = build_standard_index(root, catalog)
+
+        check_review_records(
+            root, records, standard_index, errors, warnings
+        )
+        check_status_trail(root, records, standard_index, errors)
+        check_verified_standards(
+            root, records, standard_index, validator, errors
+        )
+        check_conflicts(root, records, standard_index, errors, warnings)
+        check_semantic_reviews(
+            root, records, standard_index, errors, warnings
+        )
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"ERROR: Initialization failed: {exc}")
         return EXIT_VALIDATION
@@ -584,7 +619,32 @@ def _run_governance_check(args: argparse.Namespace) -> int:
 
     _write_report(report, args.output)
 
+    for message in errors:
+        print(f"ERROR: {message}")
+
+    if errors:
+        return EXIT_VALIDATION
+
     return EXIT_SUCCESS
+
+
+def _required_suite_id(root: Path) -> str | None:
+    """Return the identifier of the required evaluation suite."""
+    directory = root / "evaluations" / "suites"
+
+    if not directory.is_dir():
+        return None
+
+    for path in sorted(directory.glob("*.yaml")):
+        suite = read_yaml(path)
+
+        if isinstance(suite, dict) and suite.get("required") is True:
+            identifier = suite.get("id")
+
+            if isinstance(identifier, str):
+                return identifier
+
+    return None
 
 
 def _load_suite(root: Path, suite_id: str, errors: list):
@@ -635,6 +695,12 @@ def _run_evaluate(args: argparse.Namespace) -> int:
 
         if not args.case and not args.suite:
             raise UsageError("An evaluation needs --suite or --case.")
+
+        if args.output_file is not None and not args.case:
+            raise UsageError(
+                "An output file belongs to a single case. "
+                "Use --case with --output-file."
+            )
 
         if args.case:
             case_path = root / "evaluations" / "cases" / f"{args.case}.yaml"
@@ -795,6 +861,13 @@ def _run_conflicts_check(args: argparse.Namespace) -> int:
 
     _write_report(rendered, args.output)
 
+    blocking = report["declared"]["unresolved_confirmed_blocking"]
+
+    if blocking:
+        for relative in blocking:
+            print(f"ERROR: {relative}: a confirmed conflict is still open")
+        return EXIT_VALIDATION
+
     return EXIT_SUCCESS
 
 
@@ -815,11 +888,16 @@ def _run_report(args: argparse.Namespace) -> int:
 
         evaluation = None
 
-        if args.suite:
-            suite = _load_suite(root, args.suite, [])
+        suite_id = args.suite
+
+        if suite_id is None:
+            suite_id = _required_suite_id(root)
+
+        if suite_id is not None:
+            suite = _load_suite(root, suite_id, [])
 
             if suite is None:
-                raise UsageError(f"Unknown evaluation suite: {args.suite}")
+                raise UsageError(f"Unknown evaluation suite: {suite_id}")
 
             evaluation = run_suite(
                 root, suite, _load_cases(root, suite, [])

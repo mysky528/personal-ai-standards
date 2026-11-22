@@ -298,6 +298,21 @@ def check_semantic_reviews(
             )
 
 
+def blocking_conflicts(records: list) -> list:
+    """Return the conflicts that block a promotion.
+
+    A conflict is blocking when a reviewer confirmed it and it is
+    still open.
+    """
+    return [
+        record
+        for record in records
+        if record.kind == "conflict"
+        and record.data.get("classification") == "confirmed"
+        and record.data.get("status") == "open"
+    ]
+
+
 def bilingual_evaluation_coverage(root: Path, records: list) -> dict:
     """Describe which rules have an evaluation case in which language."""
     import yaml

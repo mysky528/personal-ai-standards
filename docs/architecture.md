@@ -289,16 +289,45 @@ in the other.
 
 ### Command line interface
 
-Only the `validate` command exists so far.
-
 ```bash
 python -m pip install -e ".[dev]"
 python -m paisl validate
 python -m paisl validate --format json
+python -m paisl coverage
+python -m paisl evidence check
+python -m paisl governance check
+python -m paisl conflicts check
+python -m paisl evaluate --suite core-regression
+python -m paisl report --suite core-regression
+python -m paisl compare --baseline old.json --current new.json
 ```
 
-Exit codes: `0` success, `1` validation failure, `2` invalid
-arguments, `3` execution error.
+#### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Success. Nothing blocking was found |
+| `1` | A validation, an evaluation, or a check found something blocking |
+| `2` | The arguments or the configuration are invalid |
+| `3` | The tool could not complete because of an execution failure |
+
+The contract by command:
+
+| Command | `0` | `1` |
+|---|---|---|
+| `validate` | The registry, the Catalog, the Skills, and the records are valid | A finding that blocks the repository |
+| `evaluate` | Every case of the suite passed | A case failed, errored, or was skipped |
+| `evidence check` | No rejected record supports a rule | A rejected record supports a rule |
+| `governance check` | Every Standard that claims to be verified clears the local gates | A Standard claims to be verified without clearing them |
+| `conflicts check` | No confirmed conflict is still open | A confirmed conflict is still open |
+| `coverage` | Always | Never. A standard without a Skill is reported, not failed |
+| `report` | Always | Never. The report states what it found |
+| `compare` | The two reports describe the same evaluation | They do not, so they were not compared |
+
+A finding that is only advisory, such as a stale record of a
+Standard that is still in `draft`, never changes an exit code. The
+`--strict` flag of `validate` is the only way to turn a warning into
+a failure.
 
 ### Compatibility
 
@@ -311,12 +340,20 @@ The equivalence is enforced by `tests/unit/test_legacy_equivalence.py`,
 which compares the current implementation against outputs recorded
 from the v0.1.x validator.
 
-### Not implemented yet
+### Not implemented
 
 The evidence registry, lifecycle governance, conflict detection, and
-evaluation engine are described in the v0.2.0 design documents and
-are not part of the tool yet. No command exposes them. The
-reference instances under `evidence/`, `governance/`, and
+the evaluation engine are part of the tool since v0.2.0. What the
+tool still does not do:
+
+- It cannot establish the identity or the authority of a reviewer.
+  That belongs to the branch settings of the repository.
+- It cannot decide whether two rules contradict each other. It
+  reports candidates and leaves the judgement to a person.
+- It cannot verify a source against its content. It records what a
+  reviewer said about it.
+
+The reference instances under `evidence/`, `governance/`, and
 `evaluations/` document the contracts; they are not the result of an
 actual review or evaluation.
 

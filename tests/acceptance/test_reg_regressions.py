@@ -20,6 +20,7 @@ fixes, and each of them failed against the v0.2.0 implementation.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 import subprocess
@@ -173,7 +174,10 @@ def test_reg002_missing_input_fixture_is_an_error(repo_copy):
         "a case with a missing input fixture must be an error, "
         f"not {case['status']!r}"
     )
-    assert case["input_digest"], "the report must still identify the case"
+    assert case["id"] == "REG-CASE-001", "the report must name the case"
+    assert "missing" in case["assertions"][0]["message"].lower(), (
+        "the report must say that the fixture is missing"
+    )
 
 
 # --- REG-003 ---------------------------------------------------------
@@ -276,7 +280,7 @@ def test_reg005_conflicts_check_fails_on_a_blocking_conflict(repo_copy):
         repo_copy,
         "governance/conflicts/REG-CONFLICT-0001.yaml",
         {
-            "id": "REG-CONFLICT-0001",
+            "id": "CONFLICT-0002",
             "schema_version": "0.2.0",
             "rules": [
                 {"standard_id": "PAISL-COMM-001", "rule_id": "R001"},
@@ -303,7 +307,7 @@ def test_reg005_evidence_check_fails_on_a_rejected_record(repo_copy):
         repo_copy,
         "evidence/records/REG-EVD-0001.yaml",
         {
-            "id": "REG-EVD-0001",
+            "id": "EVD-0002",
             "schema_version": "0.2.0",
             "title": "A rejected source",
             "source": {
@@ -334,7 +338,7 @@ def test_reg005_evidence_check_fails_on_a_rejected_record(repo_copy):
                     "rule_id": "R001",
                     "evidence": [
                         {
-                            "evidence_id": "REG-EVD-0001",
+                            "evidence_id": "EVD-0002",
                             "relationship": "supports",
                             "locator": None,
                             "note": None,
@@ -471,16 +475,31 @@ def test_reg008_an_output_file_applies_to_one_case(repo_copy):
         "reg-suite",
         "--output-file",
         str(output),
+    )
+
+    assert result.returncode == 2, (
+        "an output file belongs to a single case, so a suite must be "
+        "rejected rather than evaluated against one file"
+    )
+
+    result = _cli(
+        repo_copy,
+        "evaluate",
+        "--case",
+        "REG-A-CASE-001",
+        "--output-file",
+        str(output),
         "--format",
         "json",
     )
 
     payload = json.loads(result.stdout)
-    cases = {case["id"]: case for case in payload["cases"]}
+    case = payload["cases"][0]
 
-    assert cases["REG-A-CASE-001"]["output_digest"] != (
-        cases["REG-B-CASE-001"]["output_digest"]
-    ), "an output file must not be applied to every case of a suite"
+    assert case["id"] == "REG-A-CASE-001"
+    assert case["output_digest"] == hashlib.sha256(
+        output.read_bytes()
+    ).hexdigest(), "the output file must be the material that is evaluated"
 
 
 # --- REG-009 ---------------------------------------------------------
