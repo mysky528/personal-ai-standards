@@ -99,6 +99,7 @@ class CaseResult:
     input_digest: str
     output_digest: str
     output_excerpt: str
+    definition_digest: str = ""
 
     def as_dict(self) -> dict:
         return {
@@ -109,6 +110,7 @@ class CaseResult:
             "input_digest": self.input_digest,
             "output_digest": self.output_digest,
             "output_excerpt": self.output_excerpt,
+            "definition_digest": self.definition_digest,
             "assertions": [item.as_dict() for item in self.assertions],
         }
 
@@ -125,6 +127,7 @@ class SuiteResult:
     summary: dict
     cases: list
     skipped_cases: list = field(default_factory=list)
+    definition_digest: str = ""
 
     @property
     def passed(self) -> bool:
@@ -154,6 +157,7 @@ class SuiteResult:
             "evaluator_version": self.evaluator_version,
             "input_digest": self.input_digest,
             "summary": dict(self.summary),
+            "definition_digest": self.definition_digest,
             "cases": [case.as_dict() for case in self.cases],
             "skipped_cases": list(self.skipped_cases),
         }
@@ -310,6 +314,7 @@ def evaluate_case(
         input_digest=digest_text(input_text),
         output_digest=digest_text(output_text),
         output_excerpt=redact(output_text),
+        definition_digest=case_definition_digest(case),
     )
 
 
@@ -353,6 +358,7 @@ def case_definition_digest(case: dict) -> str:
         "id": case.get("id", ""),
         "standard_id": case.get("standard_id", ""),
         "rule_ids": list(case.get("rule_ids", [])),
+        "fixture": case.get("fixture", {}),
         "assertions": [
             {
                 "id": assertion.get("id", ""),
@@ -362,6 +368,28 @@ def case_definition_digest(case: dict) -> str:
             }
             for assertion in case.get("assertions", [])
             if isinstance(assertion, dict)
+        ],
+    }
+
+    canonical = json.dumps(
+        payload, sort_keys=True, ensure_ascii=False, default=str
+    )
+
+    return digest_text(canonical)
+
+
+def suite_definition_digest(suite: dict, cases: list) -> str:
+    """Digest of the whole evaluation definition of a suite.
+
+    The suite, its version, and the definition of every case it
+    names. Two runs that share this digest describe the same
+    evaluation.
+    """
+    payload = {
+        "id": suite.get("id", ""),
+        "version": suite.get("version", ""),
+        "cases": [
+            case_definition_digest(case) for case in cases
         ],
     }
 
@@ -432,6 +460,7 @@ def run_suite(
         summary=summary,
         cases=results,
         skipped_cases=skipped,
+        definition_digest=suite_definition_digest(suite, cases),
     )
 
 

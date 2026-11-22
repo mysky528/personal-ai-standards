@@ -234,9 +234,29 @@ suite.
 
 The same inputs always produce the same report. The report holds no
 timestamp, no random identifier, and no absolute path. The run
-identifier is derived from the content of the suite, the cases, and
-the evaluated outputs, and the input digest identifies the material
-that was evaluated.
+identifier is derived from the content of the suite, the cases, the
+assertions, and the evaluated outputs, and the input digest
+identifies the material that was evaluated.
+
+The report carries two digests of the definition itself. The digest of
+the suite covers the suite, its version, and the definition of every
+case it names. The digest of a case covers the Standard, the rules,
+the fixtures, and every assertion with its evaluator, its parameters,
+and its severity. A report that does not carry them was written
+before they existed, and a comparison with such a report does not
+claim that the definitions are the same, because it cannot know.
+
+#### The regression comparison
+
+`python -m paisl compare --baseline old.json --current new.json`
+compares two evaluation reports. It only compares them when they
+describe the same evaluation: the same suite, and the same
+definition. When they do not, it states why and does not compare
+them, because the results would not mean the same thing.
+
+A change of the evaluator version is reported but does not make the
+two reports incompatible, because the evaluator decides the outcome
+of an assertion, not the assertion itself.
 
 #### Safety
 

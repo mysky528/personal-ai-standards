@@ -96,6 +96,10 @@
 - The commands that only show a state stay out of the way. `coverage`
   and `report` never fail, so they can be used to look at the
   repository without turning it into a gate.
+- The report carries the digest of the evaluation definition, of the
+  suite and of every case. The regression comparison used to treat
+  two results as comparable even when the assertions had changed,
+  and compared results that did not describe the same evaluation.
 
 
 ## [0.2.0] - 2026-11-22

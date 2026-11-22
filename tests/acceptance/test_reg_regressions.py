@@ -20,6 +20,7 @@ fixes, and each of them failed against the v0.2.0 implementation.
 | REG-012 | A fixture that exists but cannot be read ended the whole run instead of failing its own case, and the declared output fixture was required even when the caller supplied the output |
 | REG-013 | A case that verified nothing counted as a success, and a skipped optional assertion was invisible in the summary |
 | REG-014 | The check commands did not run the whole validation of their own domain, so a broken cross reference passed them, while their names suggested an enforcing check |
+| REG-015 | The regression comparison did not notice that the evaluation definition changed, and compared two results that did not describe the same evaluation |
 """
 
 from __future__ import annotations
@@ -994,3 +995,91 @@ def test_reg014_the_report_commands_never_fail(repo_copy):
         assert result.returncode == 0, (
             f"{command} only shows a state and must not fail"
         )
+
+
+# --- REG-015 ---------------------------------------------------------
+
+def _definition_report(repo, text: str) -> dict:
+    """Evaluate a case whose assertion expects the given text."""
+    case = _case("REG-DEF-CASE-001")
+    case["assertions"][0]["params"]["text"] = text
+
+    _write(repo, "evaluations/cases/REG-DEF-CASE-001.yaml", case)
+    _write(
+        repo,
+        "evaluations/suites/reg-suite.yaml",
+        _suite(["REG-DEF-CASE-001"]),
+    )
+
+    result = _cli(
+        repo, "evaluate", "--suite", "reg-suite", "--format", "json"
+    )
+
+    return json.loads(result.stdout)
+
+
+def test_reg015_the_run_identifier_covers_the_assertions(repo_copy):
+    """A changed assertion changes the run identifier."""
+    first = _definition_report(repo_copy, "Restart the service")
+    second = _definition_report(repo_copy, "A completely different text")
+
+    assert first["run_id"] != second["run_id"], (
+        "the run identifier must cover the assertions"
+    )
+    assert first["input_digest"] != second["input_digest"]
+
+
+def test_reg015_the_report_carries_the_definition_digest(repo_copy):
+    """The report states what it evaluated."""
+    report = _definition_report(repo_copy, "Restart the service")
+
+    assert report["definition_digest"]
+    assert report["cases"][0]["definition_digest"]
+
+
+def test_reg015_the_comparison_notices_a_changed_definition(repo_copy):
+    """Two results that describe different evaluations are not compared."""
+    first = _definition_report(repo_copy, "Restart the service")
+    second = _definition_report(repo_copy, "A completely different text")
+
+    baseline = repo_copy / "baseline.json"
+    current = repo_copy / "current.json"
+    baseline.write_text(json.dumps(first), encoding="utf-8")
+    current.write_text(json.dumps(second), encoding="utf-8")
+
+    result = _cli(
+        repo_copy,
+        "compare",
+        "--baseline",
+        str(baseline),
+        "--current",
+        str(current),
+    )
+
+    assert result.returncode == 1, (
+        "two results that do not describe the same evaluation must not "
+        "be compared as equal"
+    )
+    assert "definition changed" in result.stdout
+
+
+def test_reg015_the_comparison_of_equal_results_still_works(repo_copy):
+    """The comparison of two identical results still works."""
+    first = _definition_report(repo_copy, "Restart the service")
+
+    baseline = repo_copy / "baseline.json"
+    current = repo_copy / "current.json"
+    baseline.write_text(json.dumps(first), encoding="utf-8")
+    current.write_text(json.dumps(first), encoding="utf-8")
+
+    result = _cli(
+        repo_copy,
+        "compare",
+        "--baseline",
+        str(baseline),
+        "--current",
+        str(current),
+    )
+
+    assert result.returncode == 0
+    assert "Newly failing cases: 0" in result.stdout
