@@ -242,7 +242,7 @@ def check_semantic_reviews(
     warnings: list,
 ) -> None:
     """Check that a bilingual review still describes the content."""
-    from .lifecycle import file_digest
+    from .lifecycle import file_digest, stale_record_blocks
 
     for record in records:
         if record.kind != "semantic-review":
@@ -273,12 +273,21 @@ def check_semantic_reviews(
 
         outcome = data.get("outcome")
         status = entry.get("status") or "draft"
+        declared = entry.get("version")
 
         # A Standard that claims to be verified may not keep a bilingual
         # review that no longer describes it. For a Standard that is
         # still in review, the promotion gate already refuses a stale
         # review, so the finding is a warning.
-        if status == "verified":
+        #
+        # A review of an earlier revision cannot authorise the content
+        # that came after it, whatever it says. It is reported and it
+        # does not block, so that a legitimate version upgrade is never
+        # held back by the history of the review.
+        if (
+            status == "verified"
+            and stale_record_blocks(data, declared)
+        ):
             errors.append(
                 f"{relative}: the bilingual review of {sid} is stale, the "
                 f"content changed after the review"
@@ -291,10 +300,14 @@ def check_semantic_reviews(
 
         version = data.get("standard_version")
 
-        if version == entry.get("version"):
+        if (
+            isinstance(declared, str)
+            and isinstance(version, str)
+            and version == declared
+        ):
             errors.append(
                 f"{relative}: the content of {sid} changed but its "
-                f"version stayed {entry.get('version')}"
+                f"version stayed {declared}"
             )
 
 

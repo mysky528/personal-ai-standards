@@ -163,11 +163,26 @@ def build_standard_index(root: Path, catalog: dict) -> dict:
     return index
 
 
-def load_records(root: Path, errors: list, kinds=None) -> list:
+def load_records(
+    root: Path,
+    errors: list,
+    kinds=None,
+    report_kinds=None,
+) -> list:
     """Load every governance and evaluation record in the repository.
 
     The kinds restrict what is loaded, so that a command about one
     domain does not report the records of another.
+
+    The report_kinds restrict which records have their contract
+    checked. A record of another domain may still be loaded, because
+    a record refers to it, but its problems belong to the check of
+    that domain.
+
+    The distinction matters. A record of the evidence domain is named
+    by a review record, so the review cannot be resolved without it.
+    Loading every record keeps the index whole, and reporting only the
+    records of one domain keeps the commands apart.
     """
     records: list = []
     validators: dict = {}
@@ -175,6 +190,11 @@ def load_records(root: Path, errors: list, kinds=None) -> list:
     for location in RECORD_LOCATIONS:
         if kinds is not None and location.kind not in kinds:
             continue
+
+        # A file that cannot be read belongs to the domain that owns
+        # it. The domain that merely refers to it has nothing to say
+        # about the way it is written.
+        owned = report_kinds is None or location.kind in report_kinds
 
         directory = root / location.directory
 
@@ -187,30 +207,36 @@ def load_records(root: Path, errors: list, kinds=None) -> list:
             try:
                 data = read_yaml(path)
             except (OSError, yaml.YAMLError) as exc:
-                errors.append(f"{relative}: YAML error: {exc}")
+                if owned:
+                    errors.append(f"{relative}: YAML error: {exc}")
                 continue
 
             if not isinstance(data, dict):
-                errors.append(f"{relative}: expected YAML mapping")
+                if owned:
+                    errors.append(f"{relative}: expected YAML mapping")
                 continue
 
             schema_name = location.schema_for(data.get("id"))
 
             if schema_name is None:
-                errors.append(f"{relative}: unknown record kind")
+                if owned:
+                    errors.append(f"{relative}: unknown record kind")
                 continue
+
+            kind = schema_name.replace(".schema.json", "")
 
             if schema_name not in validators:
                 schema = read_yaml(root / "schemas" / schema_name)
                 validators[schema_name] = build_validator(schema)
 
-            append_schema_errors(
-                data, validators[schema_name], relative, errors
-            )
+            if report_kinds is None or kind in report_kinds:
+                append_schema_errors(
+                    data, validators[schema_name], relative, errors
+                )
 
             records.append(
                 Record(
-                    kind=schema_name.replace(".schema.json", ""),
+                    kind=kind,
                     relative=relative,
                     path=path,
                     data=data,

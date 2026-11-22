@@ -22,7 +22,9 @@
 - A stale bilingual review is an error for a Standard that claims to
   be verified, and a warning for one that is still in review. The
   promotion gate already refuses a stale review, so the warning
-  states what the gate will decide.
+  states what the gate will decide. A review of an earlier revision
+  is a warning in both cases, because it cannot authorise the content
+  that came after it.
 - The validator no longer warns that a verified Standard requires an
   evidence review. The promotion gate states it precisely, and it
   fails the validation when the requirement is not met.
@@ -105,6 +107,23 @@
   commands still described them as reports. A test now holds the
   commands, the README, the user guide, and the architecture document
   together, and refuses a stage description that outlived its stage.
+- The history of a review does not block the next revision of a
+  Standard. A record of an earlier revision is reported and it does
+  not hold a legitimate version upgrade back for ever. A record that
+  belongs to the current revision still has to match it, and the
+  promotion gates still ask for a record that matches the digest of
+  the current content, so an approval of an earlier revision never
+  authorises new content.
+- The immutability of a published review record is decided by its
+  content and not by the number of commits that touched it. A record
+  that was edited and then restored is published again, and the
+  finding goes away. The rule that counted the commits kept the
+  repository broken for ever, with no way out.
+- The index of the records holds every record, and only the domain of
+  the command decides what is reported. A review names an evidence
+  record and a gate asks for an evaluation case, both of which live in
+  another domain. The commands filtered the index by domain, so the
+  reference did not resolve and a complete promotion failed.
 
 
 ## [0.2.0] - 2026-11-22

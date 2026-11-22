@@ -158,6 +158,11 @@ The v0.2.0 validator implements:
   an approved review record, a content digest that matches the
   reviewed file, a version update for a changed content, and a
   published review record that was not modified afterwards.
+- The record of an earlier revision of a Standard is reported and it
+  does not block. A record that belongs to the current revision has
+  to match it. The promotion gates ask for a record that matches the
+  digest of the current content, so the approval of an earlier
+  revision never authorises new content.
 - Evidence checks: a rejected record may not support a rule, and
   contradicting evidence is surfaced for review.
 - Bilingual review freshness, and a stale review of a Standard that
@@ -187,7 +192,10 @@ workflow. `tests/unit/test_codeowners.py` keeps that list complete.
 The audit trail lives in the repository as well. A review record is
 immutable once published, and it pins the digest of the content it
 reviewed, so a record cannot be edited after the fact and a change
-cannot inherit an old review.
+cannot inherit an old review. The check compares the content of the
+record with the content that was published, so a record that was
+edited and then restored is published again. A record that was
+corrected is replaced by a new record, and the old one stays.
 
 #### The branch settings that complete it
 

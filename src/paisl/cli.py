@@ -500,7 +500,7 @@ def _run_evidence_check(args: argparse.Namespace) -> int:
         root = args.repo.resolve() if args.repo else find_repo_root()
         errors: list = []
         warnings: list = []
-        records = load_records(root, errors, kinds=EVIDENCE_KINDS)
+        records = load_records(root, errors, report_kinds=EVIDENCE_KINDS)
         resolve_references(
             root,
             records,
@@ -615,7 +615,7 @@ def _run_governance_check(args: argparse.Namespace) -> int:
         )
         validator = build_validator(schema)
         catalog = load_catalog(root)
-        records = load_records(root, errors, kinds=GOVERNANCE_KINDS)
+        records = load_records(root, errors, report_kinds=GOVERNANCE_KINDS)
         standard_index = build_standard_index(root, catalog)
 
         resolve_references(
@@ -808,7 +808,7 @@ def _run_evaluate(args: argparse.Namespace) -> int:
         # resolved, so that a case that names a Standard or a rule
         # that does not exist cannot be reported as a pass.
         evaluation_records = load_records(
-            root, errors, kinds=EVALUATION_KINDS
+            root, errors, report_kinds=EVALUATION_KINDS
         )
         resolve_references(
             root,
@@ -938,7 +938,7 @@ def _run_conflicts_check(args: argparse.Namespace) -> int:
         warnings: list = []
         catalog = load_catalog(root)
         standard_index = build_standard_index(root, catalog)
-        records = load_records(root, errors, kinds=CONFLICT_KINDS)
+        records = load_records(root, errors, report_kinds=CONFLICT_KINDS)
         resolve_references(
             root, records, standard_index, errors, kinds=CONFLICT_KINDS
         )

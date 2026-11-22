@@ -172,9 +172,22 @@ content of a Standard invalidates the digest of the record that
 reviewed it, so a modification never inherits a verification. A
 substantive change also requires a version update.
 
-A published review record must not be modified. The check reads the
-history of the file, so it needs a full clone; the continuous
-integration workflow fetches one.
+A record that no longer matches the content is reported. It blocks
+only when it belongs to the current revision. A record of an earlier
+revision cannot authorise the content that came after it, whatever it
+says, so it is a warning and it does not hold a legitimate version
+upgrade back. The safety does not rest on that finding: the promotion
+gates ask for a record that matches the digest of the current
+content, so an approval of an earlier revision never authorises new
+content.
+
+A published review record must not be modified. The check compares
+the content of the file with the content that was published, so it
+needs a full clone; the continuous integration workflow fetches one.
+The comparison is of the content and not of the number of commits, so
+a record that was edited and then restored is published again and the
+finding goes away. A rule that counted the commits would keep the
+repository broken for ever, with no way out.
 
 ### Promotion gates
 

@@ -60,15 +60,15 @@ def file_digest(path: Path) -> str | None:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def published_commits(root: Path, relative: str) -> int | None:
-    """Count the commits that touched a file.
+def _git_path(root: Path, relative: str) -> str | None:
+    """Return the path of a file as the Git repository names it.
 
-    Returns None when the answer is unknown, for example when the
-    repository history is shallow or the file is not tracked.
+    The repository under test may live inside a larger repository, so
+    the path is resolved against the top of the working tree.
     """
     try:
         result = subprocess.run(
-            ["git", "-C", str(root), "log", "--format=%H", "--", relative],
+            ["git", "-C", str(root), "rev-parse", "--show-prefix"],
             capture_output=True,
             text=True,
             check=False,
@@ -79,7 +79,111 @@ def published_commits(root: Path, relative: str) -> int | None:
     if result.returncode != 0:
         return None
 
-    return len([line for line in result.stdout.splitlines() if line.strip()])
+    return f"{result.stdout.strip()}{relative}"
+
+
+def _commits_for(root: Path, relative: str) -> list:
+    """Return the commits that touched a file, the newest first."""
+    path = _git_path(root, relative)
+
+    if path is None:
+        return []
+
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "log",
+                "--format=%H",
+                "--",
+                f":(top){path}",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return []
+
+    if result.returncode != 0:
+        return []
+
+    return [
+        line.strip()
+        for line in result.stdout.splitlines()
+        if line.strip()
+    ]
+
+
+def published_content(root: Path, relative: str) -> bytes | None:
+    """Return the content of a file as it was first published.
+
+    Returns None when the answer is unknown, for example when the
+    repository history is unavailable or the file was never published.
+
+    The content is compared, not the number of commits. A record that
+    was edited and then restored is published again, and a check that
+    counted the commits would keep it in error for ever, with no way
+    out. Comparing the content keeps the rule recoverable.
+    """
+    commits = _commits_for(root, relative)
+
+    if not commits:
+        return None
+
+    path = _git_path(root, relative)
+
+    if path is None:
+        return None
+
+    # The oldest commit that touched the file introduced it.
+    first = commits[-1]
+
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "show", f"{first}:{path}"],
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return None
+
+    if result.returncode != 0:
+        return None
+
+    return result.stdout
+
+
+def _same_content(published: bytes, current: bytes) -> bool:
+    """Compare two contents, ignoring the line endings."""
+    return published.replace(b"\r\n", b"\n") == current.replace(b"\r\n", b"\n")
+
+
+def stale_record_blocks(data: dict, current_version: object) -> bool:
+    """Decide whether a record that no longer matches the content blocks.
+
+    A record that belongs to an earlier revision of a Standard cannot
+    authorise the content that came after it, whatever it says. It is
+    reported, and it does not block, so that a legitimate version
+    upgrade is never held back by the history of the review.
+
+    The safety does not depend on this finding. The promotion gates
+    ask for a record that matches the digest of the current content,
+    so an approval of an earlier revision never authorises new
+    content.
+
+    A record that belongs to the current revision has to match it. It
+    claims to describe the content that is there now, and it does
+    not, so it blocks.
+    """
+    version = data.get("standard_version")
+
+    if isinstance(current_version, str) and isinstance(version, str):
+        return version == current_version
+
+    return True
 
 
 def _standard_path(root: Path, standard_index: dict, sid: str) -> Path | None:
@@ -161,31 +265,45 @@ def check_review_records(
                     f"match {path.name}"
                 )
 
+                declared = standard_index.get(sid, {}).get("version")
+
                 # A record that approves a verification must still
-                # describe the content it verified. An earlier record
-                # that no longer matches only means that the content
-                # moved on, which the later record takes over.
-                if to_status == "verified":
+                # describe the content it verified. A record of an
+                # earlier revision cannot authorise the content that
+                # came after it, whatever it says, so it is reported
+                # and it does not block the Standard.
+                if (
+                    to_status == "verified"
+                    and stale_record_blocks(data, declared)
+                ):
                     errors.append(message)
                 else:
                     warnings.append(message)
 
                 version = data.get("standard_version")
-                declared = standard_index.get(sid, {}).get("version")
 
-                if version == declared:
+                if (
+                    isinstance(declared, str)
+                    and isinstance(version, str)
+                    and version == declared
+                ):
                     errors.append(
                         f"{relative}: the content of {sid} changed but "
                         f"its version stayed {declared}"
                     )
 
-        commits = published_commits(root, relative)
+        published = published_content(root, relative)
 
-        if commits is not None and commits > 1:
-            errors.append(
-                f"{relative}: a published review record must not be "
-                f"modified"
+        if published is not None:
+            current_bytes = (
+                record.path.read_bytes() if record.path.is_file() else b""
             )
+
+            if not _same_content(published, current_bytes):
+                errors.append(
+                    f"{relative}: a published review record must not be "
+                    f"modified"
+                )
 
 
 def check_status_trail(
