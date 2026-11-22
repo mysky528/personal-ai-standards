@@ -16,6 +16,7 @@ implemented yet.
 - `python -m paisl evidence check` command with text and JSON reports
 - `python -m paisl governance check` command with text and JSON reports
 - `python -m paisl evaluate` command with text, JSON, and Markdown reports
+- `python -m paisl conflicts check` command with text and JSON reports
 - `paisl` console script entry point
 - Test suite covering validator equivalence and CLI behaviour
 - Data contracts for evidence records, rule evidence links,
@@ -44,6 +45,11 @@ implemented yet.
   engine instead of reporting that the engine is missing.
 - The reference evaluation case checks for the action phrase rather
   than the full sentence, so it matches the wording of its fixture.
+- The evaluation case contract accepts the language a case
+  exercises, so that the English and the Chinese version of a rule
+  can be covered by their own case.
+- The semantic review contract accepts advisory suggestions from an
+  automated tool. They are recorded, and they never satisfy a gate.
 
 ### Compatibility
 - `python scripts/validate.py` keeps the same output and exit codes

@@ -26,6 +26,12 @@ from .errors import (
     UsageError,
 )
 from .coverage import build_coverage, validate_skills
+from .conflicts import (
+    bilingual_evaluation_coverage,
+    check_conflicts,
+    check_semantic_reviews,
+    conflict_candidates,
+)
 from .evaluation import (
     render_evaluation_json,
     render_evaluation_markdown,
@@ -50,6 +56,8 @@ from .registry import (
     validate_standards,
 )
 from .reporting import (
+    render_conflicts_json,
+    render_conflicts_text,
     render_coverage_json,
     render_coverage_text,
     render_evidence_json,
@@ -246,6 +254,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write the report to this file instead of standard output.",
     )
 
+    conflicts_parser = subparsers.add_parser(
+        "conflicts",
+        help="Work with the rule conflicts.",
+    )
+    conflicts_subparsers = conflicts_parser.add_subparsers(
+        dest="conflicts_command",
+        required=True,
+    )
+
+    conflicts_check_parser = conflicts_subparsers.add_parser(
+        "check",
+        help="Check the declared conflicts and list the candidates.",
+    )
+    conflicts_check_parser.add_argument(
+        "--repo",
+        type=Path,
+        default=None,
+        help="Repository root. Defaults to the current directory.",
+    )
+    conflicts_check_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Report format.",
+    )
+    conflicts_check_parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Write the report to this file instead of standard output.",
+    )
+
     return parser
 
 
@@ -292,6 +332,8 @@ def run_validation(root: Path) -> tuple[list, list, int, int]:
     check_verified_standards(
         root, records, standard_index, validator, errors
     )
+    check_conflicts(root, records, standard_index, errors, warnings)
+    check_semantic_reviews(root, records, standard_index, errors, warnings)
 
     return errors, warnings, standards_checked, skills_checked
 
@@ -596,6 +638,100 @@ def _run_evaluate(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS if result.passed else EXIT_VALIDATION
 
 
+def run_conflicts(root: Path) -> dict:
+    """Collect the conflict report."""
+    catalog = load_catalog(root)
+    errors: list = []
+    records = load_records(root, errors)
+    standard_index = build_standard_index(root, catalog)
+
+    declared = [
+        record for record in records if record.kind == "conflict"
+    ]
+
+    conflicts = [
+        {
+            "id": record.id,
+            "relative": record.relative,
+            "classification": record.data.get("classification"),
+            "status": record.data.get("status"),
+            "rules": [
+                f"{rule.get('standard_id')}/{rule.get('rule_id')}"
+                for rule in record.data.get("rules", [])
+                if isinstance(rule, dict)
+            ],
+            "reviewer": record.data.get("reviewer"),
+        }
+        for record in declared
+    ]
+
+    semantic = [
+        record for record in records if record.kind == "semantic-review"
+    ]
+
+    stale = []
+    current = {}
+
+    for record in semantic:
+        sid = record.data.get("standard_id")
+        entry = standard_index.get(sid) if isinstance(sid, str) else None
+
+        if entry is None:
+            continue
+
+        from .lifecycle import file_digest
+
+        digest = file_digest(root / entry["path"])
+
+        if digest is None or digest == record.data.get("reviewed_content_sha256"):
+            continue
+
+        stale.append(record.relative)
+
+    return {
+        "declared": {
+            "total": len(declared),
+            "conflicts": conflicts,
+            "unresolved_confirmed_blocking": [
+                conflict["id"]
+                for conflict in conflicts
+                if conflict["classification"] == "confirmed"
+                and conflict["status"] == "open"
+            ],
+        },
+        "candidates": [
+            candidate.as_dict()
+            for candidate in conflict_candidates(root, standard_index)
+        ],
+        "semantic_reviews": {
+            "total": len(semantic),
+            "stale": stale,
+        },
+        "bilingual_evaluation": bilingual_evaluation_coverage(root, records),
+    }
+
+
+def _run_conflicts_check(args: argparse.Namespace) -> int:
+    try:
+        root = args.repo.resolve() if args.repo else find_repo_root()
+        report = run_conflicts(root)
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        print(f"ERROR: Initialization failed: {exc}")
+        return EXIT_VALIDATION
+    except PaislError as exc:
+        print(f"ERROR: {exc}")
+        return exc.exit_code
+
+    if args.format == "json":
+        rendered = render_conflicts_json(report)
+    else:
+        rendered = render_conflicts_text(report)
+
+    _write_report(rendered, args.output)
+
+    return EXIT_SUCCESS
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the command line interface."""
     parser = build_parser()
@@ -617,6 +753,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "evaluate":
         return _run_evaluate(args)
+
+    if args.command == "conflicts":
+        if args.conflicts_command == "check":
+            return _run_conflicts_check(args)
 
     parser.error(f"Unknown command: {args.command}")
 

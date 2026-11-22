@@ -249,6 +249,44 @@ A report never carries the material it evaluated. It holds digests
 and a short excerpt, and anything that looks like a credential is
 removed from the excerpt.
 
+### Conflicts and bilingual review
+
+`python -m paisl conflicts check` reports the declared conflicts,
+the candidates that need a human look, and the state of the bilingual
+reviews.
+
+Two kinds of conflict handling exist, and they are not the same
+thing.
+
+A **declared conflict** is a record. A person saw two rules that may
+contradict each other and wrote it down. A conflict can only be
+confirmed or closed once a reviewer is named, because both are human
+judgements.
+
+A **candidate** is a suggestion. The tool compares the rules of
+different Standards by deterministic metadata and reports the pairs
+that look alike. The signals are the action verb that opens an
+instruction, the overlap of the significant English words, and the
+overlap of the Chinese character pairs. A candidate is a reason to
+look, never a proof: wording that resembles wording does not show
+that two rules contradict each other, and the report says so
+wherever it lists a candidate.
+
+A bilingual semantic review expires on its own. The record pins the
+digest of the content it reviewed, so any later change to the file
+makes the review stale. A stale review of a draft Standard is a
+warning; a stale review of a Standard that left draft is an error,
+because a Standard beyond draft may not claim a review it no longer
+has.
+
+Suggestions from an automated tool may be recorded next to a
+review, but they are advisory. They never satisfy a promotion gate
+and they never stand in for the outcome of a human review.
+
+The report also describes the bilingual evaluation coverage, which
+names the rules that have an evaluation case in one language but not
+in the other.
+
 ### Command line interface
 
 Only the `validate` command exists so far.

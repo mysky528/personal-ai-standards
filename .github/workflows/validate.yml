@@ -49,6 +49,9 @@ jobs:
       - name: Check the lifecycle governance
         run: python -m paisl governance check
 
+      - name: Check the rule conflicts
+        run: python -m paisl conflicts check
+
       - name: Run the evaluation suite
         run: python -m paisl evaluate --suite core-regression
 

@@ -131,6 +131,7 @@ def build_standard_index(root: Path, catalog: dict) -> dict:
 
         rule_ids: list = []
         version = None
+        status = None
         path = root / relative
 
         if path.is_file():
@@ -138,6 +139,7 @@ def build_standard_index(root: Path, catalog: dict) -> dict:
 
             if isinstance(data, dict):
                 version = data.get("version")
+                status = data.get("status")
                 rule_ids = [
                     rule.get("id")
                     for rule in data.get("rules", [])
@@ -147,6 +149,7 @@ def build_standard_index(root: Path, catalog: dict) -> dict:
         index[sid] = {
             "path": relative,
             "version": version,
+            "status": status,
             "rule_ids": rule_ids,
         }
 

@@ -35,6 +35,10 @@
       "type": "string",
       "minLength": 1
     },
+    "language": {
+      "$comment": "The language of the rule this case exercises. A rule may be covered by one case per language.",
+      "enum": ["en", "zh-CN"]
+    },
     "fixture": {
       "type": "object",
       "additionalProperties": false,

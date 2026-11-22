@@ -195,6 +195,69 @@ _GATE_MARKERS = {
 }
 
 
+def render_conflicts_text(report: dict) -> str:
+    """Render the conflict report in the text format."""
+    out = io.StringIO()
+
+    print("\n=== PAISL Conflict Report ===", file=out)
+
+    print(f"Declared conflicts: {report['declared']['total']}", file=out)
+
+    for conflict in report["declared"]["conflicts"]:
+        print(
+            f"  {conflict['id']} ({conflict['classification']}, "
+            f"{conflict['status']}): {conflict['rules']}",
+            file=out,
+        )
+
+    print(
+        "  confirmed and blocking: "
+        f"{len(report['declared']['unresolved_confirmed_blocking'])}",
+        file=out,
+    )
+
+    print(f"Candidate conflicts: {len(report['candidates'])}", file=out)
+
+    for candidate in report["candidates"]:
+        print(
+            f"  {candidate['first']} <-> {candidate['second']}: "
+            f"{'; '.join(candidate['signals'])}",
+            file=out,
+        )
+
+    if report["candidates"]:
+        print(
+            "  A candidate is a pair of rules that look alike. It is not "
+            "a contradiction and needs a human review.",
+            file=out,
+        )
+
+    print(f"Bilingual semantic reviews: {report['semantic_reviews']['total']}", file=out)
+    print(f"  stale: {len(report['semantic_reviews']['stale'])}", file=out)
+
+    for stale in report["semantic_reviews"]["stale"]:
+        print(f"    - {stale}", file=out)
+
+    coverage = report["bilingual_evaluation"]
+    print(
+        f"Rules with an evaluation case: {coverage['rules_with_cases']} "
+        f"({len(coverage['rules_with_both_languages'])} in both languages)",
+        file=out,
+    )
+
+    return out.getvalue()
+
+
+def render_conflicts_json(report: dict) -> str:
+    """Render the conflict report as JSON."""
+    payload = {
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "conflicts": report,
+    }
+
+    return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+
+
 def render_governance_text(governance: dict, show_all: bool = False) -> str:
     """Render the governance report in the text format.
 

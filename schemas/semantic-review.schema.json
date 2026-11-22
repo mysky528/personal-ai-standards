@@ -76,6 +76,29 @@
           }
         }
       }
+    },
+    "advisory_suggestions": {
+      "$comment": "Suggestions from an automated tool. They are advisory, never authoritative, and they never satisfy a gate on their own.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "text"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "field": {
+            "type": ["string", "null"],
+            "minLength": 1
+          }
+        }
+      }
     }
   },
   "$defs": {
