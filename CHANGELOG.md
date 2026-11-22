@@ -45,9 +45,12 @@
 - A case whose assertions were all skipped is skipped rather than
   passed. Nothing was verified, so nothing passed.
 - The regular expression evaluator refuses the dangerous shapes on
-  every platform. The timeout needed SIGALRM and the main thread, so
-  the fallback was an unbounded search. The structural check now
-  works everywhere, and the timeout only adds a limit on top of it.
+  every platform, and the match itself is bounded everywhere. Where
+  the platform offers a timer, the match runs under it. Where it
+  does not, the match runs in a child process that can be
+  terminated. A pattern that cannot be bounded at all is refused
+  rather than run, because a thread is not a bound: a runaway
+  regular expression keeps the lock of the interpreter.
 - The check commands report a blocking finding with the exit code
   `1`, so a workflow can gate on them. The advisory findings still
   return `0`.
