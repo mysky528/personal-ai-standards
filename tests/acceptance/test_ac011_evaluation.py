@@ -63,8 +63,12 @@ def test_ac011_a_wrong_output_fails(repo_copy):
     assert case["assertions"][1]["status"] == "fail"
 
 
-def test_ac012_an_unknown_evaluator_produces_an_error(repo_copy):
-    """A case that selects an evaluator that is not allowed errors."""
+def test_ac012_an_unknown_evaluator_is_refused(repo_copy):
+    """A case that selects an evaluator that is not allowed is refused.
+
+    The contract of a case allowlists the evaluators, so a case
+    that names another one never reaches the engine.
+    """
     path = repo_copy / "evaluations" / "cases" / "COMM-001-CASE-001.yaml"
     text = path.read_text(encoding="utf-8")
     path.write_text(
@@ -77,17 +81,10 @@ def test_ac012_an_unknown_evaluator_produces_an_error(repo_copy):
         "evaluate",
         "--case",
         "COMM-001-CASE-001",
-        "--format",
-        "json",
     )
 
     assert result.returncode == 1
-
-    payload = json.loads(result.stdout)
-    case = payload["cases"][0]
-
-    assert case["status"] == "error"
-    assert "not allowed" in case["assertions"][0]["message"]
+    assert "execute_python" in result.stdout
 
 
 def test_ac012_an_invalid_fixture_is_reported(repo_copy):

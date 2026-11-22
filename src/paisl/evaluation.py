@@ -99,6 +99,7 @@ class CaseResult:
     input_digest: str
     output_digest: str
     output_excerpt: str
+    definition_digest: str = ""
 
     def as_dict(self) -> dict:
         return {
@@ -109,6 +110,7 @@ class CaseResult:
             "input_digest": self.input_digest,
             "output_digest": self.output_digest,
             "output_excerpt": self.output_excerpt,
+            "definition_digest": self.definition_digest,
             "assertions": [item.as_dict() for item in self.assertions],
         }
 
@@ -125,13 +127,21 @@ class SuiteResult:
     summary: dict
     cases: list
     skipped_cases: list = field(default_factory=list)
+    definition_digest: str = ""
 
     @property
     def passed(self) -> bool:
         """A suite passes when every case passed.
 
+        A suite that ran nothing does not pass. Without this
+        condition an empty suite would report success, because the
+        counts of failures, errors, and skips are all zero.
+
         A skipped mandatory assertion never counts as a pass.
         """
+        if not self.cases:
+            return False
+
         return (
             self.summary.get("fail", 0) == 0
             and self.summary.get("error", 0) == 0
@@ -147,25 +157,67 @@ class SuiteResult:
             "evaluator_version": self.evaluator_version,
             "input_digest": self.input_digest,
             "summary": dict(self.summary),
+            "definition_digest": self.definition_digest,
             "cases": [case.as_dict() for case in self.cases],
             "skipped_cases": list(self.skipped_cases),
         }
 
 
-def resolve_fixture(root: Path, relative: str) -> str | None:
-    """Read a fixture that must stay inside the repository."""
+def read_fixture(
+    root: Path, relative, role: str
+) -> tuple:
+    """Read a fixture and say why it cannot be used.
+
+    Returns the text of the fixture and, when it cannot be used, the
+    reason. A fixture that exists and is empty is content, not a
+    problem: it is read as the empty text.
+
+    The three problems are kept apart, because they mean different
+    things: a fixture that is missing, a fixture that leaves the
+    repository, and a fixture that exists but cannot be read.
+    """
     if not isinstance(relative, str) or not relative:
-        return None
+        return None, f"The case does not declare a {role} fixture."
 
     candidate = (root / relative).resolve()
 
     if not candidate.is_relative_to(root.resolve()):
-        return None
+        return None, f"The {role} fixture leaves the repository: {relative}"
 
     if not candidate.is_file():
-        return None
+        return None, f"The {role} fixture is missing: {relative}"
 
-    return candidate.read_text(encoding="utf-8")
+    try:
+        return candidate.read_text(encoding="utf-8"), None
+    except (OSError, UnicodeDecodeError) as exc:
+        return None, (
+            f"The {role} fixture could not be read: {relative} ({exc})"
+        )
+
+
+def fixture_error(
+    case_id: str, standard_id: str, rule_ids: list, message: str
+) -> "CaseResult":
+    """Build the result of a case whose fixture cannot be used."""
+    return CaseResult(
+        id=case_id,
+        standard_id=standard_id,
+        rule_ids=rule_ids,
+        status=ERROR,
+        assertions=[
+            AssertionResult(
+                id="A000",
+                evaluator="fixture",
+                severity="must",
+                status=ERROR,
+                message=message,
+                details={},
+            )
+        ],
+        input_digest="",
+        output_digest="",
+        output_excerpt="",
+    )
 
 
 def evaluate_case(
@@ -193,10 +245,22 @@ def evaluate_case(
 
     fixture = case.get("fixture", {}) or {}
 
-    input_text = resolve_fixture(root, fixture.get("input", "")) or ""
+    input_text, problem = read_fixture(root, fixture.get("input"), "input")
+
+    if problem is not None:
+        return fixture_error(
+            case_id, standard_id, rule_ids, problem
+        )
 
     if output_text is None:
-        output_text = resolve_fixture(root, fixture.get("output", "")) or ""
+        output_text, problem = read_fixture(
+            root, fixture.get("output"), "output"
+        )
+
+        if problem is not None:
+            return fixture_error(
+                case_id, standard_id, rule_ids, problem
+            )
 
     results: list = []
 
@@ -250,11 +314,20 @@ def evaluate_case(
         input_digest=digest_text(input_text),
         output_digest=digest_text(output_text),
         output_excerpt=redact(output_text),
+        definition_digest=case_definition_digest(case),
     )
 
 
 def _case_status(results: list) -> str:
-    """Aggregate the assertion outcomes into the status of a case."""
+    """Aggregate the assertion outcomes into the status of a case.
+
+    A case that verified nothing is not a pass. This covers a case
+    without any assertion and a case whose assertions were all
+    skipped.
+    """
+    if not results:
+        return SKIP
+
     if any(item.status == ERROR for item in results):
         return ERROR
 
@@ -267,7 +340,64 @@ def _case_status(results: list) -> str:
     ):
         return SKIP
 
+    if all(item.status == SKIP for item in results):
+        # Nothing was verified, so the case did not pass either.
+        return SKIP
+
     return PASS
+
+
+def case_definition_digest(case: dict) -> str:
+    """Digest of what a case asserts, independent of the material.
+
+    The run identifier has to cover the evaluation definitions. Two
+    cases that read the same fixtures but assert different things are
+    different evaluations, and they must not share an identifier.
+    """
+    payload = {
+        "id": case.get("id", ""),
+        "standard_id": case.get("standard_id", ""),
+        "rule_ids": list(case.get("rule_ids", [])),
+        "fixture": case.get("fixture", {}),
+        "assertions": [
+            {
+                "id": assertion.get("id", ""),
+                "evaluator": assertion.get("evaluator", ""),
+                "params": assertion.get("params", {}),
+                "severity": assertion.get("severity", ""),
+            }
+            for assertion in case.get("assertions", [])
+            if isinstance(assertion, dict)
+        ],
+    }
+
+    canonical = json.dumps(
+        payload, sort_keys=True, ensure_ascii=False, default=str
+    )
+
+    return digest_text(canonical)
+
+
+def suite_definition_digest(suite: dict, cases: list) -> str:
+    """Digest of the whole evaluation definition of a suite.
+
+    The suite, its version, and the definition of every case it
+    names. Two runs that share this digest describe the same
+    evaluation.
+    """
+    payload = {
+        "id": suite.get("id", ""),
+        "version": suite.get("version", ""),
+        "cases": [
+            case_definition_digest(case) for case in cases
+        ],
+    }
+
+    canonical = json.dumps(
+        payload, sort_keys=True, ensure_ascii=False, default=str
+    )
+
+    return digest_text(canonical)
 
 
 def run_suite(
@@ -292,13 +422,24 @@ def run_suite(
         results.append(evaluate_case(root, case, output_text))
 
     summary = {"pass": 0, "fail": 0, "skip": 0, "error": 0}
+    assertions = {"pass": 0, "fail": 0, "skip": 0, "error": 0}
 
     for result in results:
         summary[result.status] = summary.get(result.status, 0) + 1
 
+        for item in result.assertions:
+            assertions[item.status] = assertions.get(item.status, 0) + 1
+
+    # The counts of the cases stay the four that the design names. The
+    # counts of the assertions are added beside them, because a
+    # skipped optional assertion is otherwise invisible in the
+    # summary.
+    summary["assertions"] = assertions
+
     input_digest = digest_text("\n".join(
-        f"{result.id}:{result.input_digest}:{result.output_digest}"
-        for result in results
+        f"{case.get('id', '')}:{case_definition_digest(case)}:"
+        f"{result.input_digest}:{result.output_digest}"
+        for case, result in zip(cases, results)
     ))
 
     run_id = digest_text(
@@ -319,6 +460,7 @@ def run_suite(
         summary=summary,
         cases=results,
         skipped_cases=skipped,
+        definition_digest=suite_definition_digest(suite, cases),
     )
 
 

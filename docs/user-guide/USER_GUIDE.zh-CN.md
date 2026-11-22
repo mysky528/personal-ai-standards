@@ -114,18 +114,19 @@ Validation PASSED
 
 这是预期示例，不代表本手册已经在你的环境中运行过校验。
 
-v0.2.0 提供了一组命令行工具，校验之外还能查看覆盖、证据、治理、冲突与评测：
+v0.2.0 提供了一组命令行工具。带 `check` 的命令是**强制校验**：它们检查本域的完整性，发现阻断问题时返回非零退出码。`coverage` 与 `report` 只展示状态，永远返回 0。
 
 ```bash
 python -m pip install -e ".[dev]"
 
 python -m paisl validate              # 结构与引用校验
-python -m paisl coverage              # 覆盖报告
-python -m paisl evidence check        # 证据登记与覆盖
-python -m paisl governance check      # 生命周期与晋级门禁
-python -m paisl conflicts check        # 已声明冲突与候选冲突
+python -m paisl coverage              # 覆盖报告（只查看）
+python -m paisl evidence check        # 证据登记与覆盖（强制）
+python -m paisl governance check      # 生命周期与晋级门禁（强制）
+python -m paisl conflicts check       # 已声明冲突与候选冲突（强制）
 python -m paisl evaluate --suite core-regression   # 确定性评测
-python -m paisl report --suite core-regression     # 质量报告
+python -m paisl report --suite core-regression     # 质量报告（只查看）
+python -m paisl compare --baseline old.json --current new.json   # 回归对比
 ```
 
 `python scripts/validate.py` 仍然可用，输出与退出码与旧版一致，且无需先安装包。
@@ -696,7 +697,7 @@ python scripts/validate.py
 | `unknown standard ID reference`   | Skill 引用了不存在的标准     | 核对 ID 拼写，确认该标准已在 Catalog 登记        |
 | `unknown evidence reference`      | 关联了不存在的证据记录      | 确认 `evidence/records/` 下存在该 ID              |
 | `illegal transition`              | 审查记录声明了非法状态流转    | 按治理文档的流转表修改 `from_status` 与 `to_status` |
-| `the reviewed content digest does not match` | 标准内容在审查之后被修改 | 重新审查并更新记录摘要；内容变更须同步更新版本号       |
+| `the reviewed content digest does not match` | 标准内容在审查之后被修改 | 当前修订必须重新审查并新增记录；历史修订的记录只告警，内容变更须同步更新版本号 |
 | `must not be modified`            | 已发布的审查记录被改动     | 恢复该文件，改用新增记录的方式更正                  |
 | `fixture path escapes the repository` | 夹具路径指向仓库之外    | 改用仓库内的相对路径                            |
 | `Validation FAILED`               | 一个或多个结构错误          | 阅读全部 `ERROR:` 行并逐项修正                     |

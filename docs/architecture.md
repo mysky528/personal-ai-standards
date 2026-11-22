@@ -172,9 +172,22 @@ content of a Standard invalidates the digest of the record that
 reviewed it, so a modification never inherits a verification. A
 substantive change also requires a version update.
 
-A published review record must not be modified. The check reads the
-history of the file, so it needs a full clone; the continuous
-integration workflow fetches one.
+A record that no longer matches the content is reported. It blocks
+only when it belongs to the current revision. A record of an earlier
+revision cannot authorise the content that came after it, whatever it
+says, so it is a warning and it does not hold a legitimate version
+upgrade back. The safety does not rest on that finding: the promotion
+gates ask for a record that matches the digest of the current
+content, so an approval of an earlier revision never authorises new
+content.
+
+A published review record must not be modified. The check compares
+the content of the file with the content that was published, so it
+needs a full clone; the continuous integration workflow fetches one.
+The comparison is of the content and not of the number of commits, so
+a record that was edited and then restored is published again and the
+finding goes away. A rule that counted the commits would keep the
+repository broken for ever, with no way out.
 
 ### Promotion gates
 
@@ -234,9 +247,29 @@ suite.
 
 The same inputs always produce the same report. The report holds no
 timestamp, no random identifier, and no absolute path. The run
-identifier is derived from the content of the suite, the cases, and
-the evaluated outputs, and the input digest identifies the material
-that was evaluated.
+identifier is derived from the content of the suite, the cases, the
+assertions, and the evaluated outputs, and the input digest
+identifies the material that was evaluated.
+
+The report carries two digests of the definition itself. The digest of
+the suite covers the suite, its version, and the definition of every
+case it names. The digest of a case covers the Standard, the rules,
+the fixtures, and every assertion with its evaluator, its parameters,
+and its severity. A report that does not carry them was written
+before they existed, and a comparison with such a report does not
+claim that the definitions are the same, because it cannot know.
+
+#### The regression comparison
+
+`python -m paisl compare --baseline old.json --current new.json`
+compares two evaluation reports. It only compares them when they
+describe the same evaluation: the same suite, and the same
+definition. When they do not, it states why and does not compare
+them, because the results would not mean the same thing.
+
+A change of the evaluator version is reported but does not make the
+two reports incompatible, because the evaluator decides the outcome
+of an assertion, not the assertion itself.
 
 #### Safety
 
@@ -289,16 +322,78 @@ in the other.
 
 ### Command line interface
 
-Only the `validate` command exists so far.
-
 ```bash
 python -m pip install -e ".[dev]"
 python -m paisl validate
 python -m paisl validate --format json
+python -m paisl coverage
+python -m paisl evidence check
+python -m paisl governance check
+python -m paisl conflicts check
+python -m paisl evaluate --suite core-regression
+python -m paisl report --suite core-regression
+python -m paisl compare --baseline old.json --current new.json
 ```
 
-Exit codes: `0` success, `1` validation failure, `2` invalid
-arguments, `3` execution error.
+#### How the outcomes are aggregated
+
+An assertion ends in `pass`, `fail`, `skip`, or `error`. A case
+aggregates them:
+
+| The assertions of a case | The status of the case |
+|---|---|
+| One of them errored | `error` |
+| One of them failed | `fail` |
+| A mandatory one was skipped | `skip` |
+| All of them were skipped | `skip` |
+| There are none | `skip` |
+| Otherwise | `pass` |
+
+A case that verified nothing is not a pass. A skipped mandatory
+assertion never counts as one, and a case without any assertion is
+refused by the command.
+
+A case may pass while an optional assertion was skipped, because the
+mandatory assertions held. The report keeps the four case counts that
+the design names, and adds the counts of the assertions beside them,
+so that a skipped assertion is visible in the summary and not only
+in the detail of a case.
+
+#### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Success. Nothing blocking was found |
+| `1` | A validation, an evaluation, or a check found something blocking |
+| `2` | The arguments or the configuration are invalid |
+| `3` | The tool could not complete because of an execution failure |
+
+The contract by command:
+
+| Command | `0` | `1` |
+|---|---|---|
+| `validate` | The registry, the Catalog, the Skills, and every record are valid | A finding that blocks the repository |
+| `evaluate` | Every case of the suite passed | A case failed, errored, or was skipped |
+| `evidence check` | The evidence records and their links are valid | A record breaks its contract, names something that does not exist, or supports a rule with a rejected record |
+| `governance check` | The review records, the semantic reviews, and the conflicts are valid | A record breaks its contract, names something that does not exist, or leaves a Standard that claims to be verified without clearing the gates |
+| `conflicts check` | The conflict records are valid and no confirmed conflict is open | A record breaks its contract, names something that does not exist, or a confirmed conflict is still open |
+| `coverage` | Always | Never. A standard without a Skill is reported, not failed |
+| `report` | Always | Never. The report states what it found |
+| `compare` | The two reports describe the same evaluation | They do not, so they were not compared |
+
+The commands that check are enforcing, and each of them checks the
+whole of its own domain: the records of that domain against their
+contracts, and the references they make. A problem in another domain
+is reported by `validate`, which checks everything.
+
+The commands that report only show a state. They never fail, so
+they can be used to look at the repository without turning it into a
+gate.
+
+A finding that is only advisory, such as a stale record of a
+Standard that is still in `draft`, never changes an exit code. The
+`--strict` flag of `validate` is the only way to turn a warning into
+a failure.
 
 ### Compatibility
 
@@ -311,12 +406,20 @@ The equivalence is enforced by `tests/unit/test_legacy_equivalence.py`,
 which compares the current implementation against outputs recorded
 from the v0.1.x validator.
 
-### Not implemented yet
+### Not implemented
 
 The evidence registry, lifecycle governance, conflict detection, and
-evaluation engine are described in the v0.2.0 design documents and
-are not part of the tool yet. No command exposes them. The
-reference instances under `evidence/`, `governance/`, and
+the evaluation engine are part of the tool since v0.2.0. What the
+tool still does not do:
+
+- It cannot establish the identity or the authority of a reviewer.
+  That belongs to the branch settings of the repository.
+- It cannot decide whether two rules contradict each other. It
+  reports candidates and leaves the judgement to a person.
+- It cannot verify a source against its content. It records what a
+  reviewer said about it.
+
+The reference instances under `evidence/`, `governance/`, and
 `evaluations/` document the contracts; they are not the result of an
 actual review or evaluation.
 

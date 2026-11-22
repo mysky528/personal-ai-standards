@@ -22,7 +22,9 @@
 - A stale bilingual review is an error for a Standard that claims to
   be verified, and a warning for one that is still in review. The
   promotion gate already refuses a stale review, so the warning
-  states what the gate will decide.
+  states what the gate will decide. A review of an earlier revision
+  is a warning in both cases, because it cannot authorise the content
+  that came after it.
 - The validator no longer warns that a verified Standard requires an
   evidence review. The promotion gate states it precisely, and it
   fails the validation when the requirement is not met.
@@ -34,6 +36,94 @@
 - The promotion checklist states that the version moves with the
   promotion, because the digest of a record covers the whole file,
   the status line included
+
+### Fixed
+- A case whose output fixture is missing is an error. It used to be
+  reported as a failed assertion, which hid an unusable case behind a
+  rule that did not hold.
+- A case whose input fixture is missing is an error. The missing
+  input used to be replaced by an empty string, so the evaluation
+  ran against nothing and the case could even pass.
+- A case whose assertions were all skipped is skipped rather than
+  passed. Nothing was verified, so nothing passed.
+- The regular expression evaluator refuses the dangerous shapes on
+  every platform, and the match itself is bounded everywhere. Where
+  the platform offers a timer, the match runs under it. Where it
+  does not, the match runs in a child process that can be
+  terminated. A pattern that cannot be bounded at all is refused
+  rather than run, because a thread is not a bound: a runaway
+  regular expression keeps the lock of the interpreter.
+- The check commands report a blocking finding with the exit code
+  `1`, so a workflow can gate on them. The advisory findings still
+  return `0`.
+- The run identifier and the input digest cover the evaluation
+  definitions. Two cases that read the same fixtures but assert
+  different things are different evaluations.
+- The evidence coverage starts from the rules of the Standards, so a
+  rule that nobody linked is visible instead of invisible to the
+  gate.
+- An output file belongs to a single case. It used to be applied to
+  every case of a suite, and a suite with an output file is now
+  refused.
+- The command line module no longer describes a single command, and
+  the report uses the required suite when no suite is given.
+- The exit code contract is stated per command and held by a test.
+- A suite that names no case is refused. The counts of failures,
+  errors, and skips are all zero for an empty suite, so the suite
+  reported a pass without running anything.
+- The three fixture problems are kept apart: a fixture that is
+  missing, a fixture that leaves the repository, and a fixture that
+  exists but cannot be read. The first two were already an error.
+  The third ended the whole run instead of failing its own case.
+- A fixture that exists and is empty is content, not a problem. It
+  is evaluated as the empty text, which is what an excludes
+  assertion holds for. A missing fixture is never read as an empty
+  text, because that would report an unusable case as qualified.
+- The declared output fixture is not required when the caller
+  supplies the output.
+- A case that verified nothing is not a pass. A case without any
+  assertion was counted as a success, and a case whose assertions
+  were all skipped could be counted as one as well. A case without an
+  assertion is now refused by the command.
+- The report counts the assertions beside the counts of the cases, so
+  that a skipped optional assertion is visible in the summary and
+  not only in the detail of a case.
+- The check commands check the whole of their own domain. The
+  evidence check resolves the references of the evidence records,
+  the governance check resolves the references of the review records,
+  the conflicts check resolves the references of the conflicts, and
+  the evaluation refuses a case that names a Standard or a rule that
+  does not exist. Their names promised an enforcing check, and they
+  did not deliver one.
+- The commands that only show a state stay out of the way. `coverage`
+  and `report` never fail, so they can be used to look at the
+  repository without turning it into a gate.
+- The report carries the digest of the evaluation definition, of the
+  suite and of every case. The regression comparison used to treat
+  two results as comparable even when the assertions had changed,
+  and compared results that did not describe the same evaluation.
+- The documentation and the command line are held in step. The user
+  guide named seven of the eight commands, and the help of the check
+  commands still described them as reports. A test now holds the
+  commands, the README, the user guide, and the architecture document
+  together, and refuses a stage description that outlived its stage.
+- The history of a review does not block the next revision of a
+  Standard. A record of an earlier revision is reported and it does
+  not hold a legitimate version upgrade back for ever. A record that
+  belongs to the current revision still has to match it, and the
+  promotion gates still ask for a record that matches the digest of
+  the current content, so an approval of an earlier revision never
+  authorises new content.
+- The immutability of a published review record is decided by its
+  content and not by the number of commits that touched it. A record
+  that was edited and then restored is published again, and the
+  finding goes away. The rule that counted the commits kept the
+  repository broken for ever, with no way out.
+- The index of the records holds every record, and only the domain of
+  the command decides what is reported. A review names an evidence
+  record and a gate asks for an evaluation case, both of which live in
+  another domain. The commands filtered the index by domain, so the
+  reference did not resolve and a complete promotion failed.
 
 
 ## [0.2.0] - 2026-11-22

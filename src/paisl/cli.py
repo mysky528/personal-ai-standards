@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: MIT
 """Command line interface for the PAISL tooling.
 
-Only the `validate` command exists at this stage of v0.2.0. The
-remaining commands are introduced by their work packages; they are
-deliberately absent so that nothing is described as existing before
-it is implemented.
+The commands are `validate`, `coverage`, `evidence check`,
+`governance check`, `conflicts check`, `evaluate`, `report`, and
+`compare`. Every command follows the exit code contract that the
+architecture document states.
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ from .errors import (
 from .coverage import build_coverage, validate_skills
 from .conflicts import (
     bilingual_evaluation_coverage,
+    blocking_conflicts,
     check_conflicts,
     check_semantic_reviews,
     conflict_candidates,
@@ -122,7 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     coverage_parser = subparsers.add_parser(
         "coverage",
-        help="Report how completely the repository is covered.",
+        help="Report how completely the repository is covered. Never fails.",
     )
     coverage_parser.add_argument(
         "--repo",
@@ -154,7 +155,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     evidence_check_parser = evidence_subparsers.add_parser(
         "check",
-        help="Check the evidence registry and report its coverage.",
+        help="Check the evidence registry. Fails when a record of the\n              domain is invalid or names something that does not exist.",
     )
     evidence_check_parser.add_argument(
         "--repo",
@@ -186,7 +187,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     governance_check_parser = governance_subparsers.add_parser(
         "check",
-        help="Check the review records and report the promotion gates.",
+        help="Check the lifecycle governance. Fails when a record of the\n              domain is invalid or a Standard does not clear the gates.",
     )
     governance_check_parser.add_argument(
         "--repo",
@@ -272,7 +273,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     conflicts_check_parser = conflicts_subparsers.add_parser(
         "check",
-        help="Check the declared conflicts and list the candidates.",
+        help="Check the rule conflicts. Fails when a conflict record is\n              invalid or a confirmed conflict is still open.",
     )
     conflicts_check_parser.add_argument(
         "--repo",
@@ -295,7 +296,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     report_parser = subparsers.add_parser(
         "report",
-        help="Write the quality report of the repository.",
+        help="Write the quality report of the repository. Never fails.",
     )
     report_parser.add_argument(
         "--repo",
@@ -484,13 +485,31 @@ def run_evidence_coverage(root: Path) -> dict:
     errors: list = []
     records = load_records(root, errors)
 
-    return evidence_coverage(records)
+    return evidence_coverage(records, root)
 
 
 def _run_evidence_check(args: argparse.Namespace) -> int:
+    """Check the evidence registry.
+
+    This is an enforcing check, not a report. It validates the
+    records of its own domain against their contracts, resolves the
+    references they make, and returns a non-zero code when
+    something blocks.
+    """
     try:
         root = args.repo.resolve() if args.repo else find_repo_root()
-        coverage = run_evidence_coverage(root)
+        errors: list = []
+        warnings: list = []
+        records = load_records(root, errors, report_kinds=EVIDENCE_KINDS)
+        resolve_references(
+            root,
+            records,
+            build_standard_index(root, load_catalog(root)),
+            errors,
+            kinds=EVIDENCE_KINDS,
+        )
+        check_evidence(records, errors, warnings)
+        coverage = evidence_coverage(records, root)
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"ERROR: Initialization failed: {exc}")
         return EXIT_VALIDATION
@@ -504,6 +523,15 @@ def _run_evidence_check(args: argparse.Namespace) -> int:
         report = render_evidence_text(coverage)
 
     _write_report(report, args.output)
+
+    for message in errors:
+        print(f"ERROR: {message}")
+
+    for message in warnings:
+        print(f"WARNING: {message}")
+
+    if errors:
+        return EXIT_VALIDATION
 
     return EXIT_SUCCESS
 
@@ -567,9 +595,43 @@ def run_governance(root: Path) -> dict:
 
 
 def _run_governance_check(args: argparse.Namespace) -> int:
+    """Check the lifecycle governance.
+
+    This is an enforcing check, not a report. It validates the
+    records of its own domain against their contracts, resolves the
+    references they make, and returns a non-zero code when
+    something blocks.
+    """
     try:
         root = args.repo.resolve() if args.repo else find_repo_root()
         governance = run_governance(root)
+
+        errors: list = []
+        warnings: list = []
+        schema = json.loads(
+            (root / "schemas" / "standard.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validator = build_validator(schema)
+        catalog = load_catalog(root)
+        records = load_records(root, errors, report_kinds=GOVERNANCE_KINDS)
+        standard_index = build_standard_index(root, catalog)
+
+        resolve_references(
+            root, records, standard_index, errors, kinds=GOVERNANCE_KINDS
+        )
+        check_review_records(
+            root, records, standard_index, errors, warnings
+        )
+        check_status_trail(root, records, standard_index, errors)
+        check_verified_standards(
+            root, records, standard_index, validator, errors
+        )
+        check_conflicts(root, records, standard_index, errors, warnings)
+        check_semantic_reviews(
+            root, records, standard_index, errors, warnings
+        )
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"ERROR: Initialization failed: {exc}")
         return EXIT_VALIDATION
@@ -584,7 +646,41 @@ def _run_governance_check(args: argparse.Namespace) -> int:
 
     _write_report(report, args.output)
 
+    for message in errors:
+        print(f"ERROR: {message}")
+
+    for message in warnings:
+        print(f"WARNING: {message}")
+
+    if errors:
+        return EXIT_VALIDATION
+
     return EXIT_SUCCESS
+
+
+def _required_suite_id(root: Path) -> str | None:
+    """Return the identifier of the required evaluation suite."""
+    directory = root / "evaluations" / "suites"
+
+    if not directory.is_dir():
+        return None
+
+    for path in sorted(directory.glob("*.yaml")):
+        suite = read_yaml(path)
+
+        if isinstance(suite, dict) and suite.get("required") is True:
+            identifier = suite.get("id")
+
+            if isinstance(identifier, str):
+                return identifier
+
+    return None
+
+
+EVIDENCE_KINDS = {"evidence", "rule-evidence"}
+GOVERNANCE_KINDS = {"review", "semantic-review", "conflict"}
+CONFLICT_KINDS = {"conflict"}
+EVALUATION_KINDS = {"evaluation-case", "evaluation-suite"}
 
 
 def _load_suite(root: Path, suite_id: str, errors: list):
@@ -605,11 +701,22 @@ def _load_suite(root: Path, suite_id: str, errors: list):
 
 
 def _load_cases(root: Path, suite: dict, errors: list) -> list:
-    """Load the cases a suite names."""
+    """Load the cases a suite names.
+
+    A suite that names no case is refused. Otherwise the evaluation
+    would run nothing and report success.
+    """
     directory = root / "evaluations" / "cases"
     cases: list = []
+    names = suite.get("cases", [])
 
-    for case_id in suite.get("cases", []):
+    if not isinstance(names, list) or not names:
+        errors.append(
+            f"The evaluation suite {suite.get('id', '')!r} names no case."
+        )
+        return cases
+
+    for case_id in names:
         path = directory / f"{case_id}.yaml"
 
         if not path.is_file():
@@ -619,7 +726,20 @@ def _load_cases(root: Path, suite: dict, errors: list) -> list:
         case = read_yaml(path)
 
         if isinstance(case, dict):
+            assertions = case.get("assertions")
+
+            if not isinstance(assertions, list) or not assertions:
+                errors.append(
+                    f"The evaluation case {case_id} declares no assertion."
+                )
+                continue
+
             cases.append(case)
+
+    if not cases and not errors:
+        errors.append(
+            f"The evaluation suite {suite.get('id', '')!r} names no case."
+        )
 
     return cases
 
@@ -635,6 +755,12 @@ def _run_evaluate(args: argparse.Namespace) -> int:
 
         if not args.case and not args.suite:
             raise UsageError("An evaluation needs --suite or --case.")
+
+        if args.output_file is not None and not args.case:
+            raise UsageError(
+                "An output file belongs to a single case. "
+                "Use --case with --output-file."
+            )
 
         if args.case:
             case_path = root / "evaluations" / "cases" / f"{args.case}.yaml"
@@ -677,6 +803,26 @@ def _run_evaluate(args: argparse.Namespace) -> int:
                 )
 
             output_text = candidate.read_text(encoding="utf-8")
+
+        # The evaluation material is validated and its references are
+        # resolved, so that a case that names a Standard or a rule
+        # that does not exist cannot be reported as a pass.
+        evaluation_records = load_records(
+            root, errors, report_kinds=EVALUATION_KINDS
+        )
+        resolve_references(
+            root,
+            evaluation_records,
+            build_standard_index(root, load_catalog(root)),
+            errors,
+            kinds=EVALUATION_KINDS,
+            check_fixtures=False,
+        )
+
+        if errors:
+            for message in errors:
+                print(f"ERROR: {message}")
+            return EXIT_VALIDATION
 
         result = run_suite(
             root,
@@ -778,9 +924,25 @@ def run_conflicts(root: Path) -> dict:
 
 
 def _run_conflicts_check(args: argparse.Namespace) -> int:
+    """Check the rule conflicts.
+
+    This is an enforcing check. It validates the conflict records
+    against their contract, resolves the references they make, and
+    returns a non-zero code when a confirmed conflict is still open.
+    """
     try:
         root = args.repo.resolve() if args.repo else find_repo_root()
         report = run_conflicts(root)
+
+        errors: list = []
+        warnings: list = []
+        catalog = load_catalog(root)
+        standard_index = build_standard_index(root, catalog)
+        records = load_records(root, errors, report_kinds=CONFLICT_KINDS)
+        resolve_references(
+            root, records, standard_index, errors, kinds=CONFLICT_KINDS
+        )
+        check_conflicts(root, records, standard_index, errors, warnings)
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"ERROR: Initialization failed: {exc}")
         return EXIT_VALIDATION
@@ -794,6 +956,22 @@ def _run_conflicts_check(args: argparse.Namespace) -> int:
         rendered = render_conflicts_text(report)
 
     _write_report(rendered, args.output)
+
+    for message in errors:
+        print(f"ERROR: {message}")
+
+    for message in warnings:
+        print(f"WARNING: {message}")
+
+    blocking = report["declared"]["unresolved_confirmed_blocking"]
+
+    if blocking:
+        for relative in blocking:
+            print(f"ERROR: {relative}: a confirmed conflict is still open")
+        return EXIT_VALIDATION
+
+    if errors:
+        return EXIT_VALIDATION
 
     return EXIT_SUCCESS
 
@@ -815,11 +993,16 @@ def _run_report(args: argparse.Namespace) -> int:
 
         evaluation = None
 
-        if args.suite:
-            suite = _load_suite(root, args.suite, [])
+        suite_id = args.suite
+
+        if suite_id is None:
+            suite_id = _required_suite_id(root)
+
+        if suite_id is not None:
+            suite = _load_suite(root, suite_id, [])
 
             if suite is None:
-                raise UsageError(f"Unknown evaluation suite: {args.suite}")
+                raise UsageError(f"Unknown evaluation suite: {suite_id}")
 
             evaluation = run_suite(
                 root, suite, _load_cases(root, suite, [])

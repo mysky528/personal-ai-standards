@@ -2,12 +2,22 @@
 """The `regex` evaluator.
 
 A regular expression can consume an unbounded amount of time, so the
-evaluator restricts what it accepts and bounds how long a match may
-run.
+evaluator bounds the work in three layers:
+
+- the shape of the pattern is refused when it may match without end,
+- the length of the pattern and of the input is bounded, and
+- the match itself is given a time limit.
+
+The time limit has to work everywhere. Where the platform offers a
+timer, the match runs in the current process under that timer. Where
+it does not, the match runs in a child process that can be
+terminated, so a pattern that slips past the shape check still
+cannot stall the run.
 """
 
 from __future__ import annotations
 
+import multiprocessing
 import re
 import signal
 import threading
@@ -19,11 +29,17 @@ MAX_PATTERN_LENGTH = 512
 MAX_INPUT_LENGTH = 65536
 MATCH_TIMEOUT_SECONDS = 1.0
 
+# The bound that applies when no timer is available.
+FALLBACK_INPUT_LENGTH = 8192
+
 # Constructs that make the backtracking engine work without end.
+# A quantified group whose body carries a quantifier, and a
+# backreference, are the shapes that cost the most.
 DANGEROUS_PATTERNS = (
     r"\([^)]*[+*]\)[+*]",
     r"\([^)]*\{[0-9,]+\}\)[+*]",
     r"\([^)]*\|[^)]*\)[+*]",
+    r"\\\d",
 )
 
 
@@ -31,21 +47,38 @@ class RegexTimeout(Exception):
     """Raised when a match takes longer than the allowed time."""
 
 
-def _timeout_handler(signum, frame):
-    raise RegexTimeout("The regular expression took too long.")
+class _NoChildProcess(Exception):
+    """Raised when a child process cannot be started."""
 
 
-def _bounded_search(pattern: str, text: str):
-    """Search with a time limit where the platform allows one."""
-    can_signal = (
+def timeout_available() -> bool:
+    """Report whether a match can be given a time limit in this process.
+
+    A timer needs SIGALRM and the main thread. Without one, the match
+    has to run somewhere that can be terminated.
+    """
+    return (
         hasattr(signal, "SIGALRM")
         and hasattr(signal, "setitimer")
         and threading.current_thread() is threading.main_thread()
     )
 
-    if not can_signal:
-        return re.search(pattern, text)
 
+def is_dangerous(pattern: str) -> str | None:
+    """Return why a pattern may match without end, or None."""
+    for dangerous in DANGEROUS_PATTERNS:
+        if re.search(dangerous, pattern):
+            return "the pattern uses a construct that can match without end"
+
+    return None
+
+
+def _timeout_handler(signum, frame):
+    raise RegexTimeout("The regular expression took too long.")
+
+
+def _search_with_timer(pattern: str, text: str):
+    """Search under a timer, in the current process."""
     previous = signal.signal(signal.SIGALRM, _timeout_handler)
     signal.setitimer(signal.ITIMER_REAL, MATCH_TIMEOUT_SECONDS)
 
@@ -54,6 +87,127 @@ def _bounded_search(pattern: str, text: str):
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
         signal.signal(signal.SIGALRM, previous)
+
+
+def _match_worker(pattern: str, text: str, queue) -> None:
+    """Search in a child process and report the outcome."""
+    try:
+        queue.put(("ok", re.search(pattern, text) is not None))
+    except re.error as exc:
+        queue.put(("error", str(exc)))
+    except Exception:  # pragma: no cover - defensive
+        queue.put(("error", "the match failed"))
+
+
+def _search_in_child_process(pattern: str, text: str):
+    """Search in a child process that can be terminated.
+
+    This is the path for a platform without a timer and for a match
+    outside the main thread. The child is terminated when it takes
+    longer than the limit, so a pattern that slips past the shape
+    check still cannot stall the run.
+    """
+    context = multiprocessing.get_context("spawn")
+    queue = context.Queue()
+    process = context.Process(
+        target=_match_worker, args=(pattern, text, queue)
+    )
+
+    try:
+        process.start()
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise _NoChildProcess(str(exc)) from exc
+
+    process.join(MATCH_TIMEOUT_SECONDS)
+
+    if process.is_alive():
+        process.terminate()
+        process.join(1)
+
+        if process.is_alive():  # pragma: no cover - defensive
+            process.kill()
+            process.join(1)
+
+        raise RegexTimeout(
+            f"The pattern did not finish within "
+            f"{MATCH_TIMEOUT_SECONDS} seconds."
+        )
+
+    try:
+        outcome, value = queue.get_nowait()
+    except Exception as exc:
+        # The child never reported. The usual reason is that the
+        # main module cannot be imported again, which the spawn
+        # method needs.
+        raise _NoChildProcess(str(exc)) from exc
+
+    if outcome == "error":
+        raise re.error(value)
+
+    return _Found(value)
+
+
+def _search_in_thread(pattern: str, text: str):
+    """Search in a thread. Not a safe bound, kept for the last resort.
+
+    A runaway regular expression holds the lock of the interpreter,
+    so the waiting thread is released late and the worker keeps
+    burning. The evaluator does not use this path to claim a bound.
+    """
+    outcome: dict = {}
+
+    def worker():
+        try:
+            outcome["match"] = re.search(pattern, text)
+        except re.error as exc:
+            outcome["error"] = exc
+
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
+    thread.join(MATCH_TIMEOUT_SECONDS)
+
+    if thread.is_alive():
+        raise RegexTimeout(
+            f"The pattern did not finish within "
+            f"{MATCH_TIMEOUT_SECONDS} seconds."
+        )
+
+    if "error" in outcome:
+        raise outcome["error"]
+
+    return outcome.get("match")
+
+
+class _Found:
+    """The result of a match that ran in a child process."""
+
+    def __init__(self, found: bool):
+        self.found = found
+
+    def __bool__(self) -> bool:
+        return self.found
+
+
+def _bounded_search(pattern: str, text: str):
+    """Search with a time limit on every platform.
+
+    A timer in the current process is the cheapest bound and it
+    interrupts a runaway match. Without one, the match has to run
+    where it can be terminated.
+    """
+    if timeout_available():
+        return _search_with_timer(pattern, text)
+
+    try:
+        return _search_in_child_process(pattern, text)
+    except _NoChildProcess as exc:
+        # A thread would not hold the bound, because a runaway
+        # regular expression keeps the lock of the interpreter. The
+        # pattern is refused instead of being run without a limit.
+        raise _NoChildProcess(
+            "the pattern could not be evaluated with a time limit: "
+            f"no timer and no child process ({exc})"
+        ) from exc
 
 
 class RegexEvaluator:
@@ -81,18 +235,19 @@ class RegexEvaluator:
                 details={"parameter": "pattern", "limit": MAX_PATTERN_LENGTH},
             )
 
-        for dangerous in DANGEROUS_PATTERNS:
-            if re.search(dangerous, pattern):
-                return EvaluationResult(
-                    status=ERROR,
-                    message=(
-                        "The pattern uses a construct that can match "
-                        "without end."
-                    ),
-                    details={"parameter": "pattern"},
-                )
+        # The dangerous shapes are refused everywhere. A timer only
+        # adds a time limit on top, where the platform offers one.
+        danger = is_dangerous(pattern)
 
-        text = output[:MAX_INPUT_LENGTH]
+        if danger is not None:
+            return EvaluationResult(
+                status=ERROR,
+                message=danger,
+                details={"parameter": "pattern"},
+            )
+
+        limit = MAX_INPUT_LENGTH if timeout_available() else FALLBACK_INPUT_LENGTH
+        text = output[:limit]
 
         try:
             match = _bounded_search(pattern, text)
@@ -105,6 +260,12 @@ class RegexEvaluator:
                 ),
                 details={"parameter": "pattern"},
             )
+        except _NoChildProcess as exc:
+            return EvaluationResult(
+                status=ERROR,
+                message=f"The pattern could not be evaluated safely: {exc}",
+                details={"parameter": "pattern"},
+            )
         except re.error as exc:
             return EvaluationResult(
                 status=ERROR,
@@ -112,7 +273,7 @@ class RegexEvaluator:
                 details={"parameter": "pattern"},
             )
 
-        found = match is not None
+        found = bool(match)
 
         return EvaluationResult(
             status=PASS if found else FAIL,
@@ -124,6 +285,6 @@ class RegexEvaluator:
             details={
                 "pattern": pattern,
                 "found": found,
-                "truncated": len(output) > MAX_INPUT_LENGTH,
+                "truncated": len(output) > limit,
             },
         )

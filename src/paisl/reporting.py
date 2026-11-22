@@ -347,7 +347,7 @@ def build_quality_report(
     )
 
     coverage = build_coverage(root, schema, catalog, records)
-    evidence = evidence_coverage(records)
+    evidence = evidence_coverage(records, root)
 
     if validation is None:
         validation = {
@@ -596,6 +596,10 @@ def compare_evaluation_results(baseline: dict, current: dict) -> dict:
     The two reports must describe the same evaluation. When they do
     not, the comparison states why instead of pretending that the
     results mean the same thing.
+
+    A report that was written before the definition digest existed
+    does not carry one, and the comparison does not claim that the
+    definitions are the same because it cannot know.
     """
     reasons: list = []
 
@@ -604,6 +608,17 @@ def compare_evaluation_results(baseline: dict, current: dict) -> dict:
             f"the suite differs: {baseline.get('suite_id')} and "
             f"{current.get('suite_id')}"
         )
+
+    baseline_definition = baseline.get("definition_digest")
+    current_definition = current.get("definition_digest")
+
+    if baseline_definition and current_definition:
+        if baseline_definition != current_definition:
+            reasons.append(
+                "the evaluation definition changed: the cases, their "
+                "assertions, or the suite itself differ, so the results "
+                "do not describe the same evaluation"
+            )
 
     baseline_cases = _case_map(baseline)
     current_cases = _case_map(current)

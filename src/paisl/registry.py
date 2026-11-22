@@ -71,6 +71,7 @@ class RecordLocation:
     """Where a kind of record lives and which contract it uses."""
 
     directory: str
+    kind: str
     schemas: dict = field(default_factory=dict)
     default_schema: str | None = None
 
@@ -87,14 +88,17 @@ class RecordLocation:
 RECORD_LOCATIONS = (
     RecordLocation(
         "evidence/records",
+        "evidence",
         {"EVD-": "evidence.schema.json"},
     ),
     RecordLocation(
         "evidence/links",
+        "rule-evidence",
         default_schema="rule-evidence.schema.json",
     ),
     RecordLocation(
         "governance/reviews",
+        "review",
         {
             "REV-": "review.schema.json",
             "SEM-": "semantic-review.schema.json",
@@ -102,14 +106,17 @@ RECORD_LOCATIONS = (
     ),
     RecordLocation(
         "governance/conflicts",
+        "conflict",
         {"CONFLICT-": "conflict.schema.json"},
     ),
     RecordLocation(
         "evaluations/cases",
+        "evaluation-case",
         default_schema="evaluation-case.schema.json",
     ),
     RecordLocation(
         "evaluations/suites",
+        "evaluation-suite",
         default_schema="evaluation-suite.schema.json",
     ),
 )
@@ -156,12 +163,39 @@ def build_standard_index(root: Path, catalog: dict) -> dict:
     return index
 
 
-def load_records(root: Path, errors: list) -> list:
-    """Load every governance and evaluation record in the repository."""
+def load_records(
+    root: Path,
+    errors: list,
+    kinds=None,
+    report_kinds=None,
+) -> list:
+    """Load every governance and evaluation record in the repository.
+
+    The kinds restrict what is loaded, so that a command about one
+    domain does not report the records of another.
+
+    The report_kinds restrict which records have their contract
+    checked. A record of another domain may still be loaded, because
+    a record refers to it, but its problems belong to the check of
+    that domain.
+
+    The distinction matters. A record of the evidence domain is named
+    by a review record, so the review cannot be resolved without it.
+    Loading every record keeps the index whole, and reporting only the
+    records of one domain keeps the commands apart.
+    """
     records: list = []
     validators: dict = {}
 
     for location in RECORD_LOCATIONS:
+        if kinds is not None and location.kind not in kinds:
+            continue
+
+        # A file that cannot be read belongs to the domain that owns
+        # it. The domain that merely refers to it has nothing to say
+        # about the way it is written.
+        owned = report_kinds is None or location.kind in report_kinds
+
         directory = root / location.directory
 
         if not directory.is_dir():
@@ -173,30 +207,36 @@ def load_records(root: Path, errors: list) -> list:
             try:
                 data = read_yaml(path)
             except (OSError, yaml.YAMLError) as exc:
-                errors.append(f"{relative}: YAML error: {exc}")
+                if owned:
+                    errors.append(f"{relative}: YAML error: {exc}")
                 continue
 
             if not isinstance(data, dict):
-                errors.append(f"{relative}: expected YAML mapping")
+                if owned:
+                    errors.append(f"{relative}: expected YAML mapping")
                 continue
 
             schema_name = location.schema_for(data.get("id"))
 
             if schema_name is None:
-                errors.append(f"{relative}: unknown record kind")
+                if owned:
+                    errors.append(f"{relative}: unknown record kind")
                 continue
+
+            kind = schema_name.replace(".schema.json", "")
 
             if schema_name not in validators:
                 schema = read_yaml(root / "schemas" / schema_name)
                 validators[schema_name] = build_validator(schema)
 
-            append_schema_errors(
-                data, validators[schema_name], relative, errors
-            )
+            if report_kinds is None or kind in report_kinds:
+                append_schema_errors(
+                    data, validators[schema_name], relative, errors
+                )
 
             records.append(
                 Record(
-                    kind=schema_name.replace(".schema.json", ""),
+                    kind=kind,
                     relative=relative,
                     path=path,
                     data=data,
@@ -220,8 +260,19 @@ def resolve_references(
     records: list,
     standard_index: dict,
     errors: list,
+    kinds=None,
+    check_fixtures: bool = True,
 ) -> None:
-    """Check that every record refers to records that exist."""
+    """Check that every record refers to records that exist.
+
+    The kinds restrict the check to one domain, so that a command
+    about that domain does not report the records of another.
+
+    The fixtures are checked as well, unless the caller says
+    otherwise. The evaluation engine reports a missing fixture as
+    the outcome of its own case, so it asks for the references
+    without the fixtures.
+    """
     evidence_ids = {
         record.id
         for record in records
@@ -234,6 +285,9 @@ def resolve_references(
     }
 
     for record in records:
+        if kinds is not None and record.kind not in kinds:
+            continue
+
         data = record.data
         relative = record.relative
 
@@ -317,27 +371,27 @@ def resolve_references(
                         f"{relative}: unknown rule reference: {rule_id}"
                     )
 
-            fixture = data.get("fixture", {})
+            if check_fixtures:
+                fixture = data.get("fixture", {})
 
-            if isinstance(fixture, dict):
-                for key in ("input", "output"):
-                    target = fixture.get(key)
+                if isinstance(fixture, dict):
+                    for key in ("input", "output"):
+                        target = fixture.get(key)
 
-                    if not isinstance(target, str):
-                        continue
+                        if not isinstance(target, str):
+                            continue
 
-                    resolved = (root / target).resolve()
+                        resolved = (root / target).resolve()
 
-                    if not resolved.is_relative_to(root.resolve()):
-                        errors.append(
-                            f"{relative}: fixture path escapes the "
-                            f"repository: {target}"
-                        )
-                    elif not resolved.is_file():
-                        errors.append(
-                            f"{relative}: fixture file missing: {target}"
-                        )
-
+                        if not resolved.is_relative_to(root.resolve()):
+                            errors.append(
+                                f"{relative}: fixture path escapes the "
+                                f"repository: {target}"
+                            )
+                        elif not resolved.is_file():
+                            errors.append(
+                                f"{relative}: fixture file missing: {target}"
+                            )
         elif record.kind == "evaluation-suite":
             for case_id in data.get("cases", []):
                 if case_id not in case_ids:

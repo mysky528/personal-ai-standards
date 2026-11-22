@@ -133,14 +133,32 @@ def check_evidence(records: list, errors: list, warnings: list) -> None:
                     )
 
 
-def evidence_coverage(records: list) -> dict:
-    """Describe how well the rules of each Standard are supported."""
+def evidence_coverage(records: list, root=None) -> dict:
+    """Describe how well the rules of each Standard are supported.
+
+    The rules come from the Standard definitions, not from the
+    links. A rule that nobody linked is uncovered, and the coverage
+    has to show it, otherwise the gate cannot see it.
+    """
     index = evidence_records(records)
     grouped = rule_evidence(records)
 
+    rules_by_standard: dict = {}
+
+    if root is not None:
+        rules_by_standard = _standard_rules(root, records)
+
     standards: dict = {}
 
-    for (standard_id, rule_id), entry in sorted(grouped.items()):
+    keys = set(grouped)
+
+    for standard_id, rule_ids in rules_by_standard.items():
+        for rule_id in rule_ids:
+            keys.add((standard_id, rule_id))
+
+    for key in sorted(keys):
+        standard_id, rule_id = key
+        entry = grouped.get(key) or RuleEvidence(standard_id, rule_id)
         reviewed_supporting = 0
         supporting = entry.supporting
         context = [
@@ -191,3 +209,43 @@ def evidence_coverage(records: list) -> dict:
             ),
         },
     }
+
+
+def _standard_rules(root, records: list) -> dict:
+    """Return the rule identifiers of every Standard in the repository."""
+    import yaml
+
+    from .registry import build_standard_index, load_catalog
+
+    try:
+        catalog = load_catalog(root)
+    except (OSError, ValueError):
+        return {}
+
+    index = build_standard_index(root, catalog)
+    rules: dict = {}
+
+    for sid, entry in sorted(index.items()):
+        path = root / entry["path"]
+
+        if not path.is_file():
+            continue
+
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            continue
+
+        if not isinstance(data, dict):
+            continue
+
+        rule_ids = [
+            rule.get("id")
+            for rule in data.get("rules", [])
+            if isinstance(rule, dict) and isinstance(rule.get("id"), str)
+        ]
+
+        if rule_ids:
+            rules[sid] = rule_ids
+
+    return rules

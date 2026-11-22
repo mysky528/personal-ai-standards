@@ -18,7 +18,7 @@ from paisl.evaluation import (
     redact,
     render_evaluation_json,
     render_evaluation_markdown,
-    resolve_fixture,
+    read_fixture,
     run_suite,
 )
 
@@ -144,11 +144,24 @@ def test_redaction_covers_common_shapes():
 
 def test_a_fixture_outside_the_repository_is_not_read(repo_root):
     """A fixture that leaves the repository is never resolved."""
-    assert resolve_fixture(repo_root, "../outside.txt") is None
-    assert resolve_fixture(repo_root, "evaluations/fixtures/absent.txt") is None
-    assert resolve_fixture(
-        repo_root, "evaluations/fixtures/comm-001-input.txt"
-    ) is not None
+    text, problem = read_fixture(repo_root, "../outside.txt", "input")
+
+    assert text is None
+    assert "leaves the repository" in problem
+
+    text, problem = read_fixture(
+        repo_root, "evaluations/fixtures/absent.txt", "input"
+    )
+
+    assert text is None
+    assert "missing" in problem
+
+    text, problem = read_fixture(
+        repo_root, "evaluations/fixtures/comm-001-input.txt", "input"
+    )
+
+    assert problem is None
+    assert text
 
 
 def test_the_report_has_a_markdown_form(repo_root):
@@ -167,7 +180,42 @@ def test_the_report_has_a_json_form(repo_root):
 
     assert payload["suite_id"] == "core-regression"
     assert payload["status"] == "passed"
-    assert payload["summary"] == {
-        "pass": 1, "fail": 0, "skip": 0, "error": 0,
-    }
+    assert payload["summary"]["pass"] == 1
+    assert payload["summary"]["fail"] == 0
+    assert payload["summary"]["skip"] == 0
+    assert payload["summary"]["error"] == 0
+    assert payload["summary"]["assertions"]["pass"] == 2
     assert payload["cases"][0]["output_digest"]
+
+
+def test_the_engine_refuses_an_evaluator_that_is_not_allowed(repo_root):
+    """The engine keeps its own guard behind the contract.
+
+    The contract of a case allowlists the evaluators, so a case with
+    another one is refused before it runs. The engine still refuses
+    it, because the two guards do not depend on each other.
+    """
+    from paisl.evaluation import evaluate_case
+
+    case = {
+        "id": "X-CASE-001",
+        "standard_id": "PAISL-COMM-001",
+        "rule_ids": ["R001"],
+        "fixture": {
+            "input": "evaluations/fixtures/comm-001-input.txt",
+            "output": "evaluations/fixtures/comm-001-output.txt",
+        },
+        "assertions": [
+            {
+                "id": "A001",
+                "evaluator": "execute_python",
+                "params": {"text": "x"},
+                "severity": "must",
+            }
+        ],
+    }
+
+    result = evaluate_case(repo_root, case)
+
+    assert result.status == "error"
+    assert "not allowed" in result.assertions[0].message
