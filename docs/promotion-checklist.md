@@ -82,7 +82,7 @@ A rule is covered by the evidence that supports it. Write
 # SPDX-License-Identifier: CC-BY-4.0
 schema_version: "0.2.0"
 standard_id: PAISL-ENG-001
-standard_version: "0.1.0"
+standard_version: "0.2.0"
 rules:
   - rule_id: R001
     evidence:
@@ -109,17 +109,25 @@ A Standard without a case has no evaluation, and the gate
 in `evaluations/cases/`, its fixtures in `evaluations/fixtures/`, and
 the suite has to name it.
 
-## Step 4 — Change the status
+## Step 4 — Change the status and the version
 
-Edit the Standard file and set the status.
+Edit the Standard file. The status moves to `verified`, and the
+version moves with it.
 
 ```yaml
+version: 0.2.0
 status: verified
 ```
 
-The version stays as it is when the content of the rule did not
-change. A change to the rules themselves needs a version update,
-and the validator refuses a change without one.
+The version moves because the digest of a record covers the whole
+file, the status line included. A record that reviewed the earlier
+revision therefore no longer matches, and the rule that refuses a
+change without a version update would hold the Standard back. Moving
+the version separates the two revisions: the earlier records belong
+to the earlier revision, and the new records belong to the new one.
+
+A change to the rules themselves always needs a version update, and
+the validator refuses a change without one.
 
 Compute the digest of the file **after** this edit:
 
@@ -138,7 +146,7 @@ The bilingual review, in `governance/reviews/`:
 id: SEM-0002
 schema_version: "0.2.0"
 standard_id: PAISL-ENG-001
-standard_version: "0.1.0"
+standard_version: "0.2.0"
 reviewed_content_sha256: "<the digest from step 4>"
 languages:
   - en
@@ -159,7 +167,7 @@ The lifecycle review, in `governance/reviews/`:
 id: REV-0002
 schema_version: "0.2.0"
 standard_id: PAISL-ENG-001
-standard_version: "0.1.0"
+standard_version: "0.2.0"
 from_status: review
 to_status: verified
 reviewed_content_sha256: "<the digest from step 4>"
@@ -192,6 +200,16 @@ python -m paisl evaluate --suite core-regression
 The first must report no errors, the second must show every gate of
 the Standard satisfied apart from the external one, and the third
 must pass.
+
+## The illustrative records in the repository
+
+The repository holds one illustrative lifecycle review, `REV-0001`,
+that was published before the contracts knew about the `reference`
+field. A published review record is immutable, so it cannot be
+corrected in place. It records no decision, it satisfies no gate,
+and after the content moves on the tooling reports it as stale, which
+is the truth. A new illustrative record would carry the field from
+the start.
 
 ## What must not be done
 

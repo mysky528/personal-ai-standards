@@ -18,7 +18,7 @@
 - The governance records accept a `reference` field. A record that
   documents the shape of a contract records no decision, so it never
   counts as an approval, never satisfies a gate, and never goes
-  stale. The reference instances in the repository use it.
+  stale. The evidence and bilingual reference instances use it.
 - A stale bilingual review is an error for a Standard that claims to
   be verified, and a warning for one that is still in review. The
   promotion gate already refuses a stale review, so the warning
@@ -31,6 +31,9 @@
 - The governance document now describes the branch settings that
   complete the reviewer authorisation, and which of them a single
   maintainer can enable without blocking their own changes
+- The promotion checklist states that the version moves with the
+  promotion, because the digest of a record covers the whole file,
+  the status line included
 
 
 ## [0.2.0] - 2026-11-22
