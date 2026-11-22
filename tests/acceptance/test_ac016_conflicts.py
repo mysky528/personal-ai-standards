@@ -17,6 +17,8 @@ import sys
 
 import yaml
 
+import records
+
 
 def _cli(repo, *args):
     return subprocess.run(
@@ -109,6 +111,7 @@ def test_ac018_a_missing_translation_fails(repo_copy):
 
 def test_ac019_changed_content_invalidates_the_semantic_review(repo_copy):
     """A bilingual review no longer describes changed content."""
+    records.semantic_review(repo_copy, "SEM-0002", outcome="pass")
     path = repo_copy / "standards" / "engineering" / "owasp-asvs.yaml"
     text = path.read_text(encoding="utf-8")
     path.write_text(text + "\n# a later edit\n", encoding="utf-8")
@@ -121,6 +124,7 @@ def test_ac019_changed_content_invalidates_the_semantic_review(repo_copy):
 
 def test_ac019_the_stale_review_is_listed(repo_copy):
     """The conflict report names the stale review."""
+    records.semantic_review(repo_copy, "SEM-0002", outcome="pass")
     path = repo_copy / "standards" / "engineering" / "owasp-asvs.yaml"
     text = path.read_text(encoding="utf-8")
     path.write_text(text + "\n# a later edit\n", encoding="utf-8")
@@ -131,6 +135,4 @@ def test_ac019_the_stale_review_is_listed(repo_copy):
 
     payload = json.loads(result.stdout)["conflicts"]
 
-    assert payload["semantic_reviews"]["stale"] == [
-        "governance/reviews/SEM-0001.yaml"
-    ]
+    assert "governance/reviews/SEM-0002.yaml" in payload["semantic_reviews"]["stale"]

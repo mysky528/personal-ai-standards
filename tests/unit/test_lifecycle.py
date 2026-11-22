@@ -30,6 +30,8 @@ from paisl.registry import (
 )
 from paisl.schema_validation import build_validator
 
+import records
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 STANDARD = "PAISL-ENG-001"
 STANDARD_PATH = "standards/engineering/owasp-asvs.yaml"
@@ -178,6 +180,7 @@ def test_legal_transition_is_accepted(repo_copy):
 
 def test_stale_digest_is_reported(repo_copy):
     """A review of content that changed no longer applies."""
+    records.review(repo_copy, "REV-0002")
     path = repo_copy / STANDARD_PATH
     text = path.read_text(encoding="utf-8")
     path.write_text(
@@ -200,6 +203,7 @@ def test_stale_digest_is_reported(repo_copy):
 
 def test_changed_content_requires_a_version_update(repo_copy):
     """A content change without a version change is an error."""
+    records.review(repo_copy, "REV-0002")
     path = repo_copy / STANDARD_PATH
     text = path.read_text(encoding="utf-8")
     path.write_text(text + "\n# an unrelated comment\n", encoding="utf-8")
@@ -248,8 +252,12 @@ def test_modified_review_record_is_rejected(repo_copy):
     )
 
 
-def test_status_without_a_review_record_is_rejected(repo_copy):
+def test_status_without_a_matching_review_record_is_rejected(repo_copy):
     """A Standard that left draft needs an approved record."""
+    # The approved record exists, but it describes content that has
+    # changed, so it no longer backs the status.
+    records.review(repo_copy, "REV-0002", content_digest="0" * 64)
+
     path = repo_copy / STANDARD_PATH
     text = path.read_text(encoding="utf-8")
     path.write_text(text.replace("status: draft", "status: review"), encoding="utf-8")
@@ -257,8 +265,6 @@ def test_status_without_a_review_record_is_rejected(repo_copy):
     errors: list = []
     check_status_trail(repo_copy, _records(repo_copy), _index(repo_copy), errors)
 
-    # The approved record exists, but it describes content that has
-    # changed, so it no longer backs the status.
     assert any(
         "status 'review' is not backed by a review record that matches "
         "the current content" in message
@@ -272,8 +278,9 @@ def test_status_without_any_review_record_is_rejected(repo_copy):
     text = path.read_text(encoding="utf-8")
     path.write_text(text.replace("status: draft", "status: review"), encoding="utf-8")
 
-    # Remove the only review record of the Standard.
-    (repo_copy / "governance" / "reviews" / "REV-0001.yaml").unlink()
+    # Remove every review record of the Standard.
+    for review in (repo_copy / "governance" / "reviews").glob("*.yaml"):
+        review.unlink()
 
     errors: list = []
     check_status_trail(repo_copy, _records(repo_copy), _index(repo_copy), errors)

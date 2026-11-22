@@ -1,0 +1,45 @@
+SPDX-License-Identifier: CC-BY-4.0
+
+Security review of the order service.
+
+## System context
+
+| Component | Function | Trust boundary |
+|---|---|---|
+| Web frontend | Renders the checkout page | Public internet to the API gateway |
+| API gateway | Authenticates and routes requests | Public internet to internal services |
+| Agent runtime | Executes tools on behalf of the assistant | Agent runtime to the model API and the database |
+| Database | Stores orders and customer data | Internal network to the database |
+
+## Trust boundaries
+
+Four boundaries carry untrusted or differently trusted traffic: the
+public internet to the gateway, the gateway to the internal
+services, the agent runtime to the model API, and the agent runtime
+to the database.
+
+## Findings
+
+| ID | Observation | Evidence | Risk | Action |
+|---|---|---|---|---|
+| F001 | The rate limit on the public API is unknown | Not verified | Undetermined | Verify the gateway configuration |
+| F002 | The agent runtime reads the database with one shared account | Deployment configuration | High | Give the runtime a read-only role |
+| F003 | The model API key location is unknown | Not verified | Undetermined | Confirm the key is not stored in the repository |
+
+## Unverified assumptions
+
+- The gateway terminates TLS. Not verified.
+- The database is not reachable from the public network. Not verified.
+
+## Verification plan
+
+- Inspect the gateway configuration and confirm the rate limits.
+- Review the access rights of the agent runtime account.
+- Confirm how the model API key is stored.
+- Conduct an authorised security assessment before production use.
+
+## Limitations
+
+This review is preliminary and based on the description above. It
+does not establish OWASP ASVS compliance, and it is not a
+penetration test.

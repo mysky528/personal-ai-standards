@@ -457,9 +457,6 @@ def validate_standards(
 
         append_source_url_errors(data, relative, errors)
 
-        if data.get("status") == "verified":
-            warnings.append(f"{relative}: verified requires evidence review")
-
     actual_files = {
         path.relative_to(root).as_posix()
         for path in (root / "standards").rglob("*.yaml")

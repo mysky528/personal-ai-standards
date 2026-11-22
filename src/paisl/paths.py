@@ -69,3 +69,18 @@ def read_text(path: Path) -> str:
 def read_yaml(path: Path) -> Any:
     """Load a YAML document without constructing arbitrary objects."""
     return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def is_reference(record) -> bool:
+    """Report whether a record is an illustrative instance.
+
+    A reference record documents the shape of a contract. It records
+    no decision, so it never counts as an approval, never satisfies a
+    gate, and never goes stale.
+    """
+    data = getattr(record, "data", None)
+
+    if not isinstance(data, dict):
+        return False
+
+    return data.get("reference") is True

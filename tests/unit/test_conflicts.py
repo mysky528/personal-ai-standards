@@ -25,6 +25,8 @@ from paisl.registry import (
     load_catalog,
     load_records,
 )
+
+import records
 from paisl.schema_validation import build_validator
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -137,6 +139,7 @@ def test_a_closed_conflict_needs_a_reviewer(repo_copy):
 
 def test_a_stale_bilingual_review_is_reported(repo_copy):
     """A bilingual review that no longer matches the content is stale."""
+    records.semantic_review(repo_copy, "SEM-0002", outcome="pass")
     path = repo_copy / "standards" / "engineering" / "owasp-asvs.yaml"
     text = path.read_text(encoding="utf-8")
     path.write_text(text + "\n# a later edit\n", encoding="utf-8")
@@ -153,12 +156,45 @@ def test_a_stale_bilingual_review_is_reported(repo_copy):
     )
 
 
-def test_a_stale_review_of_a_reviewed_standard_is_an_error(repo_copy):
-    """A Standard beyond draft may not keep a stale bilingual review."""
+def test_a_stale_review_of_a_reviewed_standard_is_reported(repo_copy):
+    """A Standard in review may not keep a review that no longer fits.
+
+    The promotion gate refuses a stale review on its own, so the
+    finding is a warning here. The version rule is the part that
+    blocks: a changed content needs a changed version.
+    """
+    records.semantic_review(repo_copy, "SEM-0002", outcome="pass")
     path = repo_copy / "standards" / "engineering" / "owasp-asvs.yaml"
     text = path.read_text(encoding="utf-8")
     path.write_text(
         text.replace("status: draft", "status: review")
+        + "\n# a later edit\n",
+        encoding="utf-8",
+    )
+
+    errors: list = []
+    warnings: list = []
+    check_semantic_reviews(
+        repo_copy, _records(repo_copy), _index(repo_copy), errors, warnings
+    )
+
+    assert any(
+        "the bilingual review of PAISL-ENG-001 is stale" in message
+        for message in warnings
+    )
+    assert any(
+        "changed but its version stayed 0.1.0" in message
+        for message in errors
+    )
+
+
+def test_a_stale_review_of_a_verified_standard_is_an_error(repo_copy):
+    """A Standard that claims to be verified may not keep a stale review."""
+    records.semantic_review(repo_copy, "SEM-0002", outcome="pass")
+    path = repo_copy / "standards" / "engineering" / "owasp-asvs.yaml"
+    text = path.read_text(encoding="utf-8")
+    path.write_text(
+        text.replace("status: draft", "status: verified")
         + "\n# a later edit\n",
         encoding="utf-8",
     )
@@ -209,5 +245,6 @@ def test_bilingual_evaluation_coverage_is_reported(repo_root):
     """The coverage names the rules that lack a case in a language."""
     coverage = bilingual_evaluation_coverage(repo_root, _records(repo_root))
 
-    assert coverage["rules_with_cases"] == 1
+    assert coverage["rules_with_cases"] == 2
     assert "PAISL-COMM-001/R001" in coverage["rules_with_one_language"]
+    assert "PAISL-ENG-001/R001" in coverage["rules_with_one_language"]

@@ -72,6 +72,10 @@
     "notes": {
       "type": ["string", "null"],
       "minLength": 1
+    },
+    "reference": {
+      "$comment": "An illustrative instance that supports no rule. A reference record never satisfies the evidence requirement.",
+      "type": "boolean"
     }
   },
   "allOf": [

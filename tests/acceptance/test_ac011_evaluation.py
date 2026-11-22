@@ -33,7 +33,7 @@ def test_ac011_the_suite_passes(repo_copy):
     result = _cli(repo_copy, "evaluate", "--suite", "core-regression")
 
     assert result.returncode == 0, result.stdout
-    assert "1 passed, 0 failed" in result.stdout
+    assert "2 passed, 0 failed" in result.stdout
 
 
 def test_ac011_a_wrong_output_fails(repo_copy):

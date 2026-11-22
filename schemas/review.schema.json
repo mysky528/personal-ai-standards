@@ -48,6 +48,10 @@
     "decision": {
       "enum": ["approved", "rejected"]
     },
+    "reference": {
+      "$comment": "An illustrative instance that records no decision. A reference record never counts as an approval.",
+      "type": "boolean"
+    },
     "rationale": {
       "type": "string",
       "minLength": 1

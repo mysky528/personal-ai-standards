@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .paths import is_reference
+
 SUPPORT = "supports"
 CONTEXT = "context"
 CONTRADICTS = "contradicts"
@@ -48,7 +50,9 @@ def evidence_records(records: list) -> dict:
     return {
         record.id: record
         for record in records
-        if record.kind == "evidence" and record.id
+        if record.kind == "evidence"
+        and record.id
+        and not is_reference(record)
     }
 
 

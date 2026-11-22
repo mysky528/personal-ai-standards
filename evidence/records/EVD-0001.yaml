@@ -13,6 +13,7 @@ review:
   reviewed_by: null
   reviewed_at: null
   rationale: null
+reference: true
 notes: >-
-  Reference instance for the evidence contract. The source is
+  Illustrative instance of the evidence contract. The source is
   registered but has not been substantively verified.

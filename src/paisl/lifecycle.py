@@ -20,6 +20,8 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from .paths import is_reference
+
 ALLOWED_TRANSITIONS = frozenset({
     ("draft", "review"),
     ("review", "draft"),
@@ -96,6 +98,7 @@ def _approved_reviews(records: list, sid: str) -> list:
         if record.kind == "review"
         and record.data.get("standard_id") == sid
         and record.data.get("decision") == "approved"
+        and not is_reference(record)
     ]
 
 
@@ -105,6 +108,7 @@ def _semantic_reviews(records: list, sid: str) -> list:
         for record in records
         if record.kind == "semantic-review"
         and record.data.get("standard_id") == sid
+        and not is_reference(record)
     ]
 
 
@@ -144,7 +148,11 @@ def check_review_records(
 
         path = _standard_path(root, standard_index, sid) if isinstance(sid, str) else None
 
-        if path is not None and isinstance(digest, str):
+        if (
+            path is not None
+            and isinstance(digest, str)
+            and not is_reference(record)
+        ):
             current = file_digest(path)
 
             if current is not None and current != digest:
@@ -153,6 +161,10 @@ def check_review_records(
                     f"match {path.name}"
                 )
 
+                # A record that approves a verification must still
+                # describe the content it verified. An earlier record
+                # that no longer matches only means that the content
+                # moved on, which the later record takes over.
                 if to_status == "verified":
                     errors.append(message)
                 else:
@@ -163,8 +175,8 @@ def check_review_records(
 
                 if version == declared:
                     errors.append(
-                        f"{relative}: the content of {sid} changed but its "
-                        f"version stayed {declared}"
+                        f"{relative}: the content of {sid} changed but "
+                        f"its version stayed {declared}"
                     )
 
         commits = published_commits(root, relative)

@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: CC-BY-4.0
+id: ENG-001-CASE-001
+schema_version: "0.2.0"
+standard_id: PAISL-ENG-001
+rule_ids:
+  - R001
+language: en
+title: "Security review reports its trust boundaries and its unknowns"
+fixture:
+  input: evaluations/fixtures/eng-001-input.txt
+  output: evaluations/fixtures/eng-001-output.txt
+assertions:
+  - id: A001
+    evaluator: contains
+    params:
+      text: "Trust boundaries"
+    severity: must
+  - id: A002
+    evaluator: contains
+    params:
+      text: "Not verified"
+    severity: must
+  - id: A003
+    evaluator: contains
+    params:
+      text: "Verification plan"
+    severity: must
+  - id: A004
+    evaluator: excludes
+    params:
+      text: "OWASP ASVS compliant"
+    severity: must

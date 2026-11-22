@@ -9,6 +9,23 @@
   path
 - A test that keeps the owner list complete, so a new critical
   directory cannot be added without an owner
+- `docs/promotion-checklist.md`, the procedure that moves a Standard
+  from `draft` to `verified`
+- An evaluation case for PAISL-ENG-001, with its fixtures, so the
+  security review Standard has an evaluation like the others
+
+### Changed
+- The governance records accept a `reference` field. A record that
+  documents the shape of a contract records no decision, so it never
+  counts as an approval, never satisfies a gate, and never goes
+  stale. The reference instances in the repository use it.
+- A stale bilingual review is an error for a Standard that claims to
+  be verified, and a warning for one that is still in review. The
+  promotion gate already refuses a stale review, so the warning
+  states what the gate will decide.
+- The validator no longer warns that a verified Standard requires an
+  evidence review. The promotion gate states it precisely, and it
+  fails the validation when the requirement is not met.
 
 ### Documentation
 - The governance document now describes the branch settings that

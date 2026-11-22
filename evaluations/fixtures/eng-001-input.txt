@@ -1,0 +1,13 @@
+SPDX-License-Identifier: CC-BY-4.0
+
+Order service under review.
+
+Components:
+
+- a web frontend that renders the checkout page
+- an API gateway that authenticates and routes requests
+- an agent runtime that executes tools on behalf of the assistant
+- a database that stores orders and customer data
+- an external model API
+
+The agent runtime reads the database with a shared account.

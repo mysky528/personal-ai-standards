@@ -210,3 +210,14 @@ rests on the review record in `governance/reviews/`. A repository
 with more than one maintainer should enable the required review and
 the Code Owners review together, and should then treat the review
 record as the durable copy of the decision.
+
+### 8. The promotion procedure / 晋级流程
+
+`docs/promotion-checklist.md` describes how a Standard moves from
+`draft` to `verified`: how the evidence is reviewed, how the rules
+are linked to it, how the evaluation runs, how the status changes,
+which records pin the new digest, and how the result is verified.
+
+The order matters. The digest of a record pins the exact bytes of
+the Standard file it reviewed, so the status change and the records
+that describe it belong in the same change.

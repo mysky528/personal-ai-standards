@@ -10,12 +10,13 @@ languages:
 reviewer: "reviewer-id"
 reviewed_at: "2026-11-21T12:00:00Z"
 outcome: needs_work
+reference: true
 summary:
   en: >-
-    Reference instance for the bilingual semantic review contract. It
-    is not the record of an actual review.
+    Illustrative instance of the bilingual semantic review contract. It
+    records no review.
   zh-CN: >-
-    双语语义审查契约的参考实例。此记录不代表一次真实审查。
+    双语语义审查契约的示例实例。此记录不代表一次真实审查。
 findings:
   - id: SEM-0001-F001
     severity: minor

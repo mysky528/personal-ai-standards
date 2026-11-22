@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: CC-BY-4.0
 id: core-regression
 schema_version: "0.2.0"
-version: "0.2.0"
+version: "0.2.1"
 title:
   en: "Core regression suite"
   zh-CN: "核心回归套件"
@@ -13,3 +13,4 @@ description:
 required: true
 cases:
   - COMM-001-CASE-001
+  - ENG-001-CASE-001

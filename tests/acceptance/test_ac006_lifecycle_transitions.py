@@ -14,6 +14,8 @@ import pathlib
 import subprocess
 import sys
 
+import records
+
 STANDARD = "PAISL-ENG-001"
 STANDARD_PATH = "standards/engineering/owasp-asvs.yaml"
 
@@ -103,6 +105,7 @@ def test_ac006_legal_transition_is_accepted(repo_copy):
 
 def test_ac007_changed_content_invalidates_the_review(repo_copy):
     """Changing the Standard content invalidates the old digest."""
+    records.review(repo_copy, "REV-0002")
     path = repo_copy / STANDARD_PATH
     text = path.read_text(encoding="utf-8")
     path.write_text(text + "\n# a later edit\n", encoding="utf-8")
@@ -116,6 +119,7 @@ def test_ac007_changed_content_invalidates_the_review(repo_copy):
 
 def test_ac007_version_update_keeps_the_record_consistent(repo_copy):
     """A content change with a version change is reported, not fatal."""
+    records.review(repo_copy, "REV-0002")
     path = repo_copy / STANDARD_PATH
     text = path.read_text(encoding="utf-8")
     path.write_text(

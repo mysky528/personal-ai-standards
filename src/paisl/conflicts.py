@@ -20,6 +20,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .paths import is_reference
+
 # Words that carry no meaning when they start an instruction.
 FUNCTION_WORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
@@ -246,6 +248,11 @@ def check_semantic_reviews(
         if record.kind != "semantic-review":
             continue
 
+        if is_reference(record):
+            # An illustrative instance records no review, so it can
+            # never go stale and never block a Standard.
+            continue
+
         relative = record.relative
         data = record.data
         sid = data.get("standard_id")
@@ -264,15 +271,20 @@ def check_semantic_reviews(
         if current == digest:
             continue
 
+        outcome = data.get("outcome")
         status = entry.get("status") or "draft"
 
-        if status == "draft":
-            warnings.append(
+        # A Standard that claims to be verified may not keep a bilingual
+        # review that no longer describes it. For a Standard that is
+        # still in review, the promotion gate already refuses a stale
+        # review, so the finding is a warning.
+        if status == "verified":
+            errors.append(
                 f"{relative}: the bilingual review of {sid} is stale, the "
                 f"content changed after the review"
             )
         else:
-            errors.append(
+            warnings.append(
                 f"{relative}: the bilingual review of {sid} is stale, the "
                 f"content changed after the review"
             )
@@ -281,8 +293,8 @@ def check_semantic_reviews(
 
         if version == entry.get("version"):
             errors.append(
-                f"{relative}: the content of {sid} changed but its version "
-                f"stayed {entry.get('version')}"
+                f"{relative}: the content of {sid} changed but its "
+                f"version stayed {entry.get('version')}"
             )
 
 

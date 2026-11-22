@@ -50,6 +50,10 @@
     "outcome": {
       "enum": ["pass", "fail", "needs_work"]
     },
+    "reference": {
+      "$comment": "An illustrative instance that records no review. A reference record never satisfies the bilingual review gate.",
+      "type": "boolean"
+    },
     "summary": {
       "$ref": "#/$defs/bilingual"
     },

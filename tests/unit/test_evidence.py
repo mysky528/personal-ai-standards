@@ -21,6 +21,8 @@ from paisl.evidence import (
 )
 from paisl.registry import load_records
 
+import records
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
@@ -61,12 +63,20 @@ def _reviewed_evidence() -> dict:
     }
 
 
-def test_evidence_records_are_indexed(repo_root):
-    """Every evidence record is reachable by its identifier."""
+def test_evidence_records_are_indexed(repo_copy):
+    """Every evidence record that counts is reachable by its identifier."""
+    records.evidence(repo_copy, "EVD-0002")
+    index = evidence_records(_records(repo_copy))
+
+    assert "EVD-0002" in index
+    assert index["EVD-0002"].data["review"]["status"] == "reviewed"
+
+
+def test_a_reference_record_is_not_indexed(repo_root):
+    """A reference instance records no evidence and never counts."""
     index = evidence_records(_records(repo_root))
 
-    assert "EVD-0001" in index
-    assert index["EVD-0001"].data["review"]["status"] == "unreviewed"
+    assert "EVD-0001" not in index
 
 
 def test_rule_evidence_is_grouped(repo_root):
@@ -130,27 +140,23 @@ def test_context_does_not_satisfy_the_requirement(repo_copy):
 
 def test_rejected_evidence_used_as_support_is_rejected(repo_copy):
     """A rejected record must not support a rule."""
-    path = repo_copy / "evidence" / "records" / "EVD-0001.yaml"
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    data["review"]["status"] = "rejected"
-    _write(path, data)
+    records.evidence(repo_copy, "EVD-0002", status="rejected")
+    records.link(repo_copy, "EVD-0002")
 
     errors: list = []
     warnings: list = []
     check_evidence(_records(repo_copy), errors, warnings)
 
     assert any(
-        "rejected evidence EVD-0001 is linked to rule R001" in message
+        "rejected evidence EVD-0002 is linked to rule R001" in message
         for message in errors
     )
 
 
 def test_contradicting_evidence_is_surfaced(repo_copy):
     """A contradicting link must be surfaced for review."""
-    path = repo_copy / "evidence" / "links" / "PAISL-ENG-001.yaml"
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    data["rules"][0]["evidence"][0]["relationship"] = "contradicts"
-    _write(path, data)
+    records.evidence(repo_copy, "EVD-0002")
+    records.link(repo_copy, "EVD-0002", relationship="contradicts")
 
     errors: list = []
     warnings: list = []
@@ -158,7 +164,7 @@ def test_contradicting_evidence_is_surfaced(repo_copy):
 
     assert not errors
     assert any(
-        "rule R001 is contradicted by EVD-0001" in message
+        "rule R001 is contradicted by EVD-0002" in message
         for message in warnings
     )
 
