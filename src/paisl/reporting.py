@@ -9,8 +9,17 @@ from __future__ import annotations
 
 import io
 import json
+from pathlib import Path
+
+from .coverage import build_coverage
+from .registry import (
+    build_standard_index,
+    load_catalog,
+    load_records,
+)
 
 REPORT_SCHEMA_VERSION = "0.2.0"
+QUALITY_REPORT_VERSION = "0.2.0"
 
 
 def render_text_report(
@@ -308,3 +317,407 @@ def render_governance_json(governance: dict) -> str:
     }
 
     return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+
+
+def build_quality_report(
+    root: Path,
+    validation: dict | None = None,
+    evaluation=None,
+) -> dict:
+    """Gather the quality of the repository into one report.
+
+    The caller passes the outcome of the validation and of the
+    evaluation, so that the report never runs them a second time.
+    """
+    from .conflicts import (
+        bilingual_evaluation_coverage,
+        conflict_candidates,
+    )
+    from .evidence import evidence_coverage
+
+    catalog = load_catalog(root)
+    errors: list = []
+    records = load_records(root, errors)
+    standard_index = build_standard_index(root, catalog)
+
+    schema = json.loads(
+        (root / "schemas" / "standard.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    coverage = build_coverage(root, schema, catalog, records)
+    evidence = evidence_coverage(records)
+
+    if validation is None:
+        validation = {
+            "status": "unknown",
+            "standards_checked": 0,
+            "skills_checked": 0,
+            "errors": 0,
+            "warnings": 0,
+            "findings": [],
+        }
+
+    conflicts = [record for record in records if record.kind == "conflict"]
+    blocking = [
+        record.relative
+        for record in conflicts
+        if record.data.get("classification") == "confirmed"
+        and record.data.get("status") == "open"
+    ]
+
+    reviews = [record for record in records if record.kind == "review"]
+    semantic = [
+        record for record in records if record.kind == "semantic-review"
+    ]
+
+    evaluation_state = {
+        "suite_id": "",
+        "run_id": "",
+        "input_digest": "",
+        "pass": 0,
+        "fail": 0,
+        "skip": 0,
+        "error": 0,
+    }
+
+    if evaluation is not None:
+        evaluation_state = {
+            "suite_id": evaluation.suite_id,
+            "run_id": evaluation.run_id,
+            "input_digest": evaluation.input_digest,
+            "pass": evaluation.summary.get("pass", 0),
+            "fail": evaluation.summary.get("fail", 0),
+            "skip": evaluation.summary.get("skip", 0),
+            "error": evaluation.summary.get("error", 0),
+        }
+
+    return {
+        "report_version": QUALITY_REPORT_VERSION,
+        "validation": validation,
+        "evidence": {
+            "standards_with_links": evidence["summary"][
+                "standards_with_links"
+            ],
+            "rules_total": evidence["summary"]["rules_total"],
+            "rules_with_reviewed_support": evidence["summary"][
+                "rules_with_reviewed_support"
+            ],
+        },
+        "skill_coverage": {
+            "total": coverage["skills"]["total"],
+            "with_standard_references": coverage["skills"][
+                "with_standard_references"
+            ],
+            "without_standard_references": coverage["skills"][
+                "without_standard_references"
+            ],
+            "standards_without_skill_references": coverage["standards"][
+                "without_skill_references"
+            ],
+        },
+        "evaluation": evaluation_state,
+        "conflicts": {
+            "declared": len(conflicts),
+            "unresolved_confirmed_blocking": blocking,
+            "candidates": len(conflict_candidates(root, standard_index)),
+        },
+        "lifecycle": {
+            "status_counts": coverage.get("status_counts", {}),
+            "review_records": len(reviews),
+            "semantic_reviews": len(semantic),
+        },
+        "reproducibility": {
+            "evaluator_version": (
+                evaluation.evaluator_version if evaluation else ""
+            ),
+            "run_id": evaluation_state["run_id"],
+            "input_digest": evaluation_state["input_digest"],
+        },
+        "bilingual_evaluation": bilingual_evaluation_coverage(root, records),
+    }
+
+
+def render_quality_markdown(report: dict) -> str:
+    """Render the quality report as Markdown."""
+    lines: list = []
+
+    lines.append("# PAISL Quality Report")
+    lines.append("")
+    lines.append(f"- Report version: `{report['report_version']}`")
+
+    validation = report["validation"]
+    lines.append(
+        f"- Validation: **{validation['status']}** "
+        f"({validation['errors']} errors, {validation['warnings']} warnings, "
+        f"{validation['standards_checked']} standards, "
+        f"{validation['skills_checked']} skills)"
+    )
+
+    evidence = report["evidence"]
+    lines.append(
+        f"- Evidence: {evidence['rules_with_reviewed_support']} of "
+        f"{evidence['rules_total']} rules have reviewed supporting evidence"
+    )
+
+    skill = report["skill_coverage"]
+    lines.append(
+        f"- Skill coverage: {skill['with_standard_references']} of "
+        f"{skill['total']} skills refer to a standard"
+    )
+
+    evaluation = report["evaluation"]
+    lines.append(
+        f"- Evaluation: {evaluation['pass']} passed, {evaluation['fail']} "
+        f"failed, {evaluation['skip']} skipped, {evaluation['error']} errored"
+    )
+
+    conflicts = report["conflicts"]
+    lines.append(
+        f"- Conflicts: {conflicts['declared']} declared, "
+        f"{len(conflicts['unresolved_confirmed_blocking'])} confirmed and "
+        f"blocking, {conflicts['candidates']} candidates"
+    )
+
+    lifecycle = report["lifecycle"]
+    lines.append(
+        f"- Lifecycle: {lifecycle['review_records']} review records, "
+        f"{lifecycle['semantic_reviews']} semantic reviews"
+    )
+
+    reproducibility = report["reproducibility"]
+    lines.append(
+        f"- Reproducibility: run `{reproducibility['run_id']}`, "
+        f"input digest `{reproducibility['input_digest']}`"
+    )
+
+    lines.append("")
+
+    if validation["findings"]:
+        lines.append("## Findings")
+        lines.append("")
+
+        for finding in validation["findings"]:
+            lines.append(f"- {finding}")
+
+        lines.append("")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_quality_json(report: dict) -> str:
+    """Render the quality report as JSON."""
+    return json.dumps(
+        report, ensure_ascii=False, indent=2, sort_keys=True
+    ) + "\n"
+
+
+def render_quality_text(report: dict) -> str:
+    """Render the quality report in the text format."""
+    out = io.StringIO()
+    validation = report["validation"]
+
+    print("", file=out)
+    print("=== PAISL Quality Report ===", file=out)
+    print(f"Validation: {validation['status']}", file=out)
+    print(
+        f"  standards: {validation['standards_checked']}  "
+        f"skills: {validation['skills_checked']}  "
+        f"errors: {validation['errors']}  "
+        f"warnings: {validation['warnings']}",
+        file=out,
+    )
+
+    evidence = report["evidence"]
+    print(
+        f"Evidence: {evidence['rules_with_reviewed_support']} of "
+        f"{evidence['rules_total']} rules have reviewed supporting evidence",
+        file=out,
+    )
+
+    skill = report["skill_coverage"]
+    print(
+        f"Skill coverage: {skill['with_standard_references']} of "
+        f"{skill['total']} skills refer to a standard",
+        file=out,
+    )
+
+    evaluation = report["evaluation"]
+    print(
+        f"Evaluation: {evaluation['pass']} passed, {evaluation['fail']} "
+        f"failed, {evaluation['skip']} skipped, {evaluation['error']} errored",
+        file=out,
+    )
+
+    conflicts = report["conflicts"]
+    print(
+        f"Conflicts: {conflicts['declared']} declared, "
+        f"{len(conflicts['unresolved_confirmed_blocking'])} confirmed and "
+        f"blocking, {conflicts['candidates']} candidates",
+        file=out,
+    )
+
+    lifecycle = report["lifecycle"]
+    print(
+        f"Lifecycle: {lifecycle['review_records']} review records, "
+        f"{lifecycle['semantic_reviews']} semantic reviews",
+        file=out,
+    )
+
+    reproducibility = report["reproducibility"]
+    print(
+        f"Reproducibility: run {reproducibility['run_id']}, "
+        f"input digest {reproducibility['input_digest']}",
+        file=out,
+    )
+
+    return out.getvalue()
+
+
+def _case_map(report: dict) -> dict:
+    """Map every case of a report to its assertions and status."""
+    mapping = {}
+
+    for case in report.get("cases", []):
+        mapping[case["id"]] = {
+            "status": case.get("status"),
+            "assertions": sorted(
+                item.get("id", "") for item in case.get("assertions", [])
+            ),
+        }
+
+    return mapping
+
+
+def compare_evaluation_results(baseline: dict, current: dict) -> dict:
+    """Compare two evaluation reports.
+
+    The two reports must describe the same evaluation. When they do
+    not, the comparison states why instead of pretending that the
+    results mean the same thing.
+    """
+    reasons: list = []
+
+    if baseline.get("suite_id") != current.get("suite_id"):
+        reasons.append(
+            f"the suite differs: {baseline.get('suite_id')} and "
+            f"{current.get('suite_id')}"
+        )
+
+    baseline_cases = _case_map(baseline)
+    current_cases = _case_map(current)
+
+    for case_id in sorted(set(baseline_cases) & set(current_cases)):
+        first = baseline_cases[case_id]["assertions"]
+        second = current_cases[case_id]["assertions"]
+
+        if first != second:
+            reasons.append(
+                f"the definition of {case_id} changed: {first} and {second}"
+            )
+
+    if reasons:
+        return {
+            "compatible": False,
+            "reasons": reasons,
+            "newly_failing": [],
+            "resolved": [],
+            "still_failing": [],
+            "added_cases": [],
+            "removed_cases": [],
+            "evaluator_version": {
+                "from": baseline.get("evaluator_version"),
+                "to": current.get("evaluator_version"),
+            },
+        }
+
+    newly_failing = []
+    resolved = []
+    still_failing = []
+
+    for case_id in sorted(set(baseline_cases) & set(current_cases)):
+        first = baseline_cases[case_id]["status"]
+        second = current_cases[case_id]["status"]
+
+        if first != "fail" and second == "fail":
+            newly_failing.append(case_id)
+        elif first == "fail" and second != "fail":
+            resolved.append(case_id)
+        elif second == "fail":
+            still_failing.append(case_id)
+
+    added = sorted(set(current_cases) - set(baseline_cases))
+    removed = sorted(set(baseline_cases) - set(current_cases))
+
+    return {
+        "compatible": True,
+        "reasons": [],
+        "newly_failing": newly_failing,
+        "resolved": resolved,
+        "still_failing": still_failing,
+        "added_cases": added,
+        "removed_cases": removed,
+        "evaluator_version": {
+            "from": baseline.get("evaluator_version"),
+            "to": current.get("evaluator_version"),
+        },
+    }
+
+
+def render_comparison_text(comparison: dict) -> str:
+    """Render a regression comparison in the text format."""
+    lines: list = []
+
+    lines.append("")
+    lines.append("=== PAISL Regression Comparison ===")
+
+    if not comparison["compatible"]:
+        lines.append("The two reports do not describe the same evaluation:")
+        lines.append("")
+
+        for reason in comparison["reasons"]:
+            lines.append(f"  - {reason}")
+
+        return "\n".join(lines) + "\n"
+
+    versions = comparison["evaluator_version"]
+
+    if versions["from"] != versions["to"]:
+        lines.append(
+            f"Evaluator version changed: {versions['from']} -> {versions['to']}"
+        )
+
+    lines.append(f"Newly failing cases: {len(comparison['newly_failing'])}")
+
+    for case_id in comparison["newly_failing"]:
+        lines.append(f"  - {case_id}")
+
+    lines.append(f"Resolved failures: {len(comparison['resolved'])}")
+
+    for case_id in comparison["resolved"]:
+        lines.append(f"  - {case_id}")
+
+    lines.append(f"Still failing: {len(comparison['still_failing'])}")
+
+    for case_id in comparison["still_failing"]:
+        lines.append(f"  - {case_id}")
+
+    lines.append(f"Added cases: {len(comparison['added_cases'])}")
+
+    for case_id in comparison["added_cases"]:
+        lines.append(f"  - {case_id}")
+
+    lines.append(f"Removed cases: {len(comparison['removed_cases'])}")
+
+    for case_id in comparison["removed_cases"]:
+        lines.append(f"  - {case_id}")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_comparison_json(comparison: dict) -> str:
+    """Render a regression comparison as JSON."""
+    return json.dumps(
+        comparison, ensure_ascii=False, indent=2, sort_keys=True
+    ) + "\n"

@@ -12,6 +12,7 @@ equivalence test compares the current implementation against them.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Callable
 
@@ -81,10 +82,17 @@ def _license_scope_mismatch(root: Path) -> None:
 
 
 def _version_drift(root: Path) -> None:
-    _replace(
-        root / "catalog" / "standards.yaml",
-        "catalog_version: 0.1.1",
-        "catalog_version: 0.1.0",
+    # The message quotes the current version numbers, so the mutation
+    # must not depend on them.
+    path = root / "catalog" / "standards.yaml"
+    text = path.read_text(encoding="utf-8")
+    path.write_text(
+        re.sub(
+            r"catalog_version: \d+\.\d+\.\d+",
+            "catalog_version: 0.0.1",
+            text,
+        ),
+        encoding="utf-8",
     )
 
 

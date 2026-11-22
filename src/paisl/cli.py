@@ -56,6 +56,10 @@ from .registry import (
     validate_standards,
 )
 from .reporting import (
+    build_quality_report,
+    compare_evaluation_results,
+    render_comparison_json,
+    render_comparison_text,
     render_conflicts_json,
     render_conflicts_text,
     render_coverage_json,
@@ -65,6 +69,9 @@ from .reporting import (
     render_governance_json,
     render_governance_text,
     render_json_report,
+    render_quality_json,
+    render_quality_markdown,
+    render_quality_text,
     render_text_report,
 )
 from .schema_validation import build_validator
@@ -280,6 +287,65 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report format.",
     )
     conflicts_check_parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Write the report to this file instead of standard output.",
+    )
+
+    report_parser = subparsers.add_parser(
+        "report",
+        help="Write the quality report of the repository.",
+    )
+    report_parser.add_argument(
+        "--repo",
+        type=Path,
+        default=None,
+        help="Repository root. Defaults to the current directory.",
+    )
+    report_parser.add_argument(
+        "--format",
+        choices=("text", "json", "markdown"),
+        default="markdown",
+        help="Report format.",
+    )
+    report_parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Write the report to this file instead of standard output.",
+    )
+    report_parser.add_argument(
+        "--suite",
+        type=str,
+        default=None,
+        help="The evaluation suite to include. Defaults to the required "
+        "suite of the repository.",
+    )
+
+    compare_parser = subparsers.add_parser(
+        "compare",
+        help="Compare two evaluation reports.",
+    )
+    compare_parser.add_argument(
+        "--baseline",
+        type=Path,
+        required=True,
+        help="The earlier evaluation report.",
+    )
+    compare_parser.add_argument(
+        "--current",
+        type=Path,
+        required=True,
+        help="The later evaluation report.",
+    )
+    compare_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Report format.",
+    )
+    compare_parser.add_argument(
         "--output",
         type=Path,
         default=None,
@@ -732,6 +798,76 @@ def _run_conflicts_check(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def _run_report(args: argparse.Namespace) -> int:
+    try:
+        root = args.repo.resolve() if args.repo else find_repo_root()
+
+        errors, warnings, standards, skills = run_validation(root)
+
+        validation = {
+            "status": "failed" if errors else "passed",
+            "standards_checked": standards,
+            "skills_checked": skills,
+            "errors": len(errors),
+            "warnings": len(warnings),
+            "findings": list(errors) + list(warnings),
+        }
+
+        evaluation = None
+
+        if args.suite:
+            suite = _load_suite(root, args.suite, [])
+
+            if suite is None:
+                raise UsageError(f"Unknown evaluation suite: {args.suite}")
+
+            evaluation = run_suite(
+                root, suite, _load_cases(root, suite, [])
+            )
+
+        report = build_quality_report(root, validation, evaluation)
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        print(f"ERROR: Initialization failed: {exc}")
+        return EXIT_VALIDATION
+    except PaislError as exc:
+        print(f"ERROR: {exc}")
+        return exc.exit_code
+
+    if args.format == "json":
+        rendered = render_quality_json(report)
+    elif args.format == "text":
+        rendered = render_quality_text(report)
+    else:
+        rendered = render_quality_markdown(report)
+
+    _write_report(rendered, args.output)
+
+    return EXIT_SUCCESS
+
+
+def _run_compare(args: argparse.Namespace) -> int:
+    try:
+        baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
+        current = json.loads(args.current.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"ERROR: The reports could not be read: {exc}")
+        return EXIT_USAGE
+
+    comparison = compare_evaluation_results(baseline, current)
+
+    if args.format == "json":
+        rendered = render_comparison_json(comparison)
+    else:
+        rendered = render_comparison_text(comparison)
+
+    _write_report(rendered, args.output)
+
+    if not comparison["compatible"]:
+        return EXIT_VALIDATION
+
+    return EXIT_SUCCESS
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the command line interface."""
     parser = build_parser()
@@ -757,6 +893,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "conflicts":
         if args.conflicts_command == "check":
             return _run_conflicts_check(args)
+
+    if args.command == "report":
+        return _run_report(args)
+
+    if args.command == "compare":
+        return _run_compare(args)
 
     parser.error(f"Unknown command: {args.command}")
 

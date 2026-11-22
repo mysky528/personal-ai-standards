@@ -188,6 +188,25 @@ def test_unknown_record_kind_is_rejected(repo_copy):
     assert any("unknown record kind" in message for message in errors)
 
 
+def test_a_generated_report_directory_is_not_checked(repo_copy):
+    """The output directory of the tools is not part of the repository.
+
+    Writing a report into `.paisl/` must not make the validation
+    fail, because that directory holds generated files without a
+    licence of their own.
+    """
+    reports = repo_copy / ".paisl" / "reports"
+    reports.mkdir(parents=True)
+    (reports / "quality.md").write_text("# report\n", encoding="utf-8")
+
+    from paisl.licensing import validate_license_scope
+
+    errors: list = []
+    validate_license_scope(repo_copy, errors)
+
+    assert not errors
+
+
 def test_coverage_reports_missing_links_without_failing(repo_root):
     """A standard without a Skill reference is reported, not failed."""
     catalog = load_catalog(repo_root)

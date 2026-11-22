@@ -21,6 +21,7 @@ SKIP_DIRECTORIES = {
     "node_modules",
     "dist",
     "build",
+    ".paisl",
 }
 
 # The root license files describe the licenses themselves.

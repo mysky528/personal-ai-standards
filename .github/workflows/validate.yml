@@ -58,5 +58,20 @@ jobs:
       - name: Run the test suite
         run: python -m pytest
 
+      - name: Write the reports
+        run: |
+          mkdir -p .paisl/reports
+          python -m paisl report --suite core-regression \
+            --output .paisl/reports/quality.md
+          python -m paisl evaluate --suite core-regression --format json \
+            --output .paisl/reports/evaluation.json
+
+      - name: Upload the reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: paisl-reports
+          path: .paisl/reports/
+          if-no-files-found: error
+
       - name: Verify the working tree is clean
         run: test -z "$(git status --porcelain)"

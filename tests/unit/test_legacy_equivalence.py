@@ -26,7 +26,13 @@ FIXTURES = (
 )
 
 EXTENDED_SCENARIOS = {
+    # The v0.2.0 record checks add one finding to this scenario,
+    # because a broken Catalog entry makes a conflict record
+    # unresolvable.
     "missing_standard_file",
+    # The finding quotes the current version numbers, so its text
+    # changes whenever the release version changes.
+    "version_drift",
 }
 
 
@@ -104,6 +110,19 @@ def test_extension_adds_findings_without_replacing_them(
         "the v0.2.0 checks removed a baseline finding"
     )
     assert result.stdout == current["stdout"]
+
+
+def test_version_drift_is_still_reported(repo_copy, run_validator):
+    """The version drift check still names the drift."""
+    for mutation in SCENARIOS["version_drift"]:
+        mutation(repo_copy)
+
+    result = run_validator(repo_copy)
+
+    assert result.returncode == 1
+    assert "does not match the latest release" in result.stdout
+    assert "README.md: version" in result.stdout
+    assert "README.zh-CN.md: version" in result.stdout
 
 
 def test_legacy_baselines_are_present():
