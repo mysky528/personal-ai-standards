@@ -2,7 +2,19 @@
 # Changelog
 
 
-## [Unreleased]
+## [0.2.1] - 2026-11-22
+
+A maintenance release. The twelve Standards keep their identifiers,
+their versions, and their rules. The release repairs the tooling
+around them: the regression matrix of the review list, the defects
+the matrix found, and the governance of a Standard that changes
+revision.
+
+The release adds a rule to the governance that was missing. A
+legitimate version upgrade was held back by the history of the
+review, and a complete promotion could not pass at all. The history
+of a review now stays in the past, and an approval of an earlier
+revision never authorises the content that came after it.
 
 ### Added
 - `.github/CODEOWNERS`, naming the owner of every governance critical

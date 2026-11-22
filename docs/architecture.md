@@ -47,11 +47,10 @@ factual accuracy or official compliance.
 Repository releases and individual standard versions
 are maintained separately.
 
-## Tooling (v0.2.0, in development)
+## Tooling (since v0.2.0)
 
-The v0.2.0 development branch moves the validator into an
-installable package and adds governance and evaluation services
-around it.
+Since v0.2.0 the validator lives in an installable package, with
+governance and evaluation services around it.
 
 ```text
 standards/  catalog/  schemas/  skills/
@@ -63,17 +62,17 @@ standards/  catalog/  schemas/  skills/
        +-- schema_validation  JSON Schema checks
        +-- coverage        Skill reference integrity
        +-- licensing       Path to license scope
-       +-- evidence        Evidence registry        (planned)
-       +-- lifecycle       Lifecycle governance     (planned)
-       +-- conflicts       Conflict detection       (planned)
-       +-- evaluation      Evaluation engine        (planned)
+       +-- evidence        Evidence registry
+       +-- lifecycle       Lifecycle governance
+       +-- conflicts       Conflict detection
+       +-- evaluation      Evaluation engine
        +-- reporting       Report rendering
        +-- cli             Command line interface
 ```
 
-### Data contracts (v0.2.0, in development)
+### Data contracts (since v0.2.0)
 
-The v0.2.0 contracts live beside the Standard schema in `schemas/`.
+The contracts live beside the Standard schema in `schemas/`.
 
 | Contract | Schema | Holds |
 |---|---|---|

@@ -17,8 +17,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # The lifecycle checks read the history of a review record to
-          # prove that it was not modified after publication.
+          # The lifecycle checks read the published content of a
+          # review record to prove that it was not modified after
+          # publication.
           fetch-depth: 0
 
       - name: Setup Python

@@ -6,7 +6,7 @@ and practices for human–AI communication and collaboration.
 
 [简体中文](README.zh-CN.md)
 
-**Version:** 0.2.0  
+**Version:** 0.2.1  
 **Status:** Experimental  
 **Languages:** English / Simplified Chinese  
 **MCP:** Deferred
@@ -153,6 +153,7 @@ See [`LICENSE-DOCS`](LICENSE-DOCS) for the complete mapping.
 - v0.1.0: Registry, schema, Skills, validation, governance.
 - v0.1.1: Two additional Skills, Skill reference validation, coverage governance.
 - v0.2.0: Evidence records, evaluation fixtures, review.
+- v0.2.1: Maintenance release, the regression matrix and the governance corrections.
 - v0.3.0: Search, dependency resolution, agent adapters.
 - Later: MCP server and dynamic standard distribution.
 

@@ -13,6 +13,8 @@ import pathlib
 import subprocess
 import sys
 
+from paisl.registry import latest_release_version
+
 FIXTURES = (
     pathlib.Path(__file__).resolve().parents[1] / "fixtures" / "legacy"
 )
@@ -66,4 +68,12 @@ def test_package_is_importable_without_installation(repo_copy):
     )
 
     assert result.returncode == 0, result.stderr
-    assert result.stdout.strip() == "0.2.0"
+
+    # The version of the package is the version of the release, and
+    # the release is declared in the CHANGELOG. The test holds the
+    # two together instead of repeating a number that every release
+    # has to remember to change.
+    expected = latest_release_version(repo_copy)
+
+    assert expected is not None, "the CHANGELOG declares no release"
+    assert result.stdout.strip() == expected

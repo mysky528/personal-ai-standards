@@ -142,3 +142,49 @@ def test_the_user_guide_tells_the_difference_between_the_commands():
     assert "只查看" in text, (
         "the user guide does not say which commands only report"
     )
+
+
+def test_no_stage_description_survives_in_the_documents():
+    """The documents do not describe a stage of the work any more.
+
+    A heading that says the tooling is still in development, or a
+    module that is marked as planned, misleads the next reader and
+    the next agent. The release moves the work on, and the text has
+    to move with it.
+    """
+    patterns = (
+        r"in development",
+        r"\(planned\)",
+        r"\bplanned\b(?!\s+but\s+not\s+implemented)",
+        r"not implemented in this release",
+        r"is now (?:here|available)",
+    )
+
+    # The governance document states that a dedicated Skill is planned
+    # but not implemented. That is a statement about the coverage of a
+    # Standard, not a stage of the work, so it is allowed.
+    allowed = ("docs/governance.md",)
+
+    documents = [
+        ROOT / "README.md",
+        ROOT / "README.zh-CN.md",
+        ROOT / "docs" / "architecture.md",
+        ROOT / "docs" / "governance.md",
+        ROOT / "docs" / "user-guide" / "USER_GUIDE.zh-CN.md",
+        ROOT / "docs" / "promotion-checklist.md",
+        ROOT / "CHANGELOG.md",
+    ]
+
+    for path in documents:
+        relative = path.relative_to(ROOT).as_posix()
+
+        if relative in allowed:
+            continue
+
+        text = path.read_text(encoding="utf-8")
+
+        for pattern in patterns:
+            assert not re.search(pattern, text, re.IGNORECASE), (
+                f"{relative} still carries the stage description "
+                f"{pattern!r}"
+            )
