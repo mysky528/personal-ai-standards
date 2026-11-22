@@ -123,7 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     coverage_parser = subparsers.add_parser(
         "coverage",
-        help="Report how completely the repository is covered.",
+        help="Report how completely the repository is covered. Never fails.",
     )
     coverage_parser.add_argument(
         "--repo",
@@ -155,7 +155,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     evidence_check_parser = evidence_subparsers.add_parser(
         "check",
-        help="Check the evidence registry and report its coverage.",
+        help="Check the evidence registry. Fails when a record of the\n              domain is invalid or names something that does not exist.",
     )
     evidence_check_parser.add_argument(
         "--repo",
@@ -187,7 +187,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     governance_check_parser = governance_subparsers.add_parser(
         "check",
-        help="Check the review records and report the promotion gates.",
+        help="Check the lifecycle governance. Fails when a record of the\n              domain is invalid or a Standard does not clear the gates.",
     )
     governance_check_parser.add_argument(
         "--repo",
@@ -273,7 +273,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     conflicts_check_parser = conflicts_subparsers.add_parser(
         "check",
-        help="Check the declared conflicts and list the candidates.",
+        help="Check the rule conflicts. Fails when a conflict record is\n              invalid or a confirmed conflict is still open.",
     )
     conflicts_check_parser.add_argument(
         "--repo",
@@ -296,7 +296,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     report_parser = subparsers.add_parser(
         "report",
-        help="Write the quality report of the repository.",
+        help="Write the quality report of the repository. Never fails.",
     )
     report_parser.add_argument(
         "--repo",

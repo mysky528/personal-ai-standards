@@ -114,18 +114,19 @@ Validation PASSED
 
 这是预期示例，不代表本手册已经在你的环境中运行过校验。
 
-v0.2.0 提供了一组命令行工具，校验之外还能查看覆盖、证据、治理、冲突与评测：
+v0.2.0 提供了一组命令行工具。带 `check` 的命令是**强制校验**：它们检查本域的完整性，发现阻断问题时返回非零退出码。`coverage` 与 `report` 只展示状态，永远返回 0。
 
 ```bash
 python -m pip install -e ".[dev]"
 
 python -m paisl validate              # 结构与引用校验
-python -m paisl coverage              # 覆盖报告
-python -m paisl evidence check        # 证据登记与覆盖
-python -m paisl governance check      # 生命周期与晋级门禁
-python -m paisl conflicts check        # 已声明冲突与候选冲突
+python -m paisl coverage              # 覆盖报告（只查看）
+python -m paisl evidence check        # 证据登记与覆盖（强制）
+python -m paisl governance check      # 生命周期与晋级门禁（强制）
+python -m paisl conflicts check       # 已声明冲突与候选冲突（强制）
 python -m paisl evaluate --suite core-regression   # 确定性评测
-python -m paisl report --suite core-regression     # 质量报告
+python -m paisl report --suite core-regression     # 质量报告（只查看）
+python -m paisl compare --baseline old.json --current new.json   # 回归对比
 ```
 
 `python scripts/validate.py` 仍然可用，输出与退出码与旧版一致，且无需先安装包。

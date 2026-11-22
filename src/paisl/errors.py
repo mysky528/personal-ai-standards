@@ -39,7 +39,3 @@ class UnsafePathError(ValidationError):
 
 class InitializationError(ValidationError):
     """The repository could not be loaded."""
-
-
-class UnsupportedCommandError(UsageError):
-    """The requested command is not implemented in this release."""

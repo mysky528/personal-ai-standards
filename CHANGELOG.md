@@ -100,6 +100,11 @@
   suite and of every case. The regression comparison used to treat
   two results as comparable even when the assertions had changed,
   and compared results that did not describe the same evaluation.
+- The documentation and the command line are held in step. The user
+  guide named seven of the eight commands, and the help of the check
+  commands still described them as reports. A test now holds the
+  commands, the README, the user guide, and the architecture document
+  together, and refuses a stage description that outlived its stage.
 
 
 ## [0.2.0] - 2026-11-22
