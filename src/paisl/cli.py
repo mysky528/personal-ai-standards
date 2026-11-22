@@ -527,6 +527,9 @@ def _run_evidence_check(args: argparse.Namespace) -> int:
     for message in errors:
         print(f"ERROR: {message}")
 
+    for message in warnings:
+        print(f"WARNING: {message}")
+
     if errors:
         return EXIT_VALIDATION
 
@@ -645,6 +648,9 @@ def _run_governance_check(args: argparse.Namespace) -> int:
 
     for message in errors:
         print(f"ERROR: {message}")
+
+    for message in warnings:
+        print(f"WARNING: {message}")
 
     if errors:
         return EXIT_VALIDATION
@@ -953,6 +959,9 @@ def _run_conflicts_check(args: argparse.Namespace) -> int:
 
     for message in errors:
         print(f"ERROR: {message}")
+
+    for message in warnings:
+        print(f"WARNING: {message}")
 
     blocking = report["declared"]["unresolved_confirmed_blocking"]
 
