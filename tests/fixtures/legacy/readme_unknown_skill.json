@@ -1,0 +1,6 @@
+{
+  "spdx": "SPDX-License-Identifier: MIT",
+  "exit_code": 1,
+  "stdout": "\n=== PAISL Validation Report ===\nStandards checked: 12\nSkills checked: 7\nErrors: 1\nWarnings: 1\nERROR: README.md: unknown Skill listed: stee-writing\nWARNING: README.md: Skill not listed: ste-writing\n\nValidation FAILED\n",
+  "provenance": "legacy"
+}

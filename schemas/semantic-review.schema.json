@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "SPDX-License-Identifier: MIT",
+  "title": "PAISL Semantic Review Record",
+  "description": "A human review of the bilingual content of one Standard. Kept separate from the lifecycle review record so that the two can expire independently.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "schema_version", "standard_id", "standard_version",
+    "reviewed_content_sha256", "languages", "reviewer", "reviewed_at",
+    "outcome", "summary", "findings"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^SEM-[0-9]{4}$"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "standard_id": {
+      "type": "string",
+      "pattern": "^PAISL-(COMM|REAS|PROD|VIS|VER|ENG)-[0-9]{3}$"
+    },
+    "standard_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "reviewed_content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "languages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["en", "zh-CN"]
+      }
+    },
+    "reviewer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "outcome": {
+      "enum": ["pass", "fail", "needs_work"]
+    },
+    "summary": {
+      "$ref": "#/$defs/bilingual"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "severity", "field", "description"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^SEM-[0-9]{4}-F[0-9]{3}$"
+          },
+          "severity": {
+            "enum": ["minor", "major", "blocking"]
+          },
+          "field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "$ref": "#/$defs/bilingual"
+          }
+        }
+      }
+    },
+    "advisory_suggestions": {
+      "$comment": "Suggestions from an automated tool. They are advisory, never authoritative, and they never satisfy a gate on their own.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "text"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "field": {
+            "type": ["string", "null"],
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "bilingual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "zh-CN"],
+      "properties": {
+        "en": {"type": "string", "minLength": 1},
+        "zh-CN": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@ and practices for human–AI communication and collaboration.
 
 [简体中文](README.zh-CN.md)
 
-**Version:** 0.1.1  
+**Version:** 0.2.0  
 **Status:** Experimental  
 **Languages:** English / Simplified Chinese  
 **MCP:** Deferred
@@ -75,6 +75,33 @@ See `docs/governance.md` for coverage rules.
 python3 -m pip install -r requirements-dev.txt
 python3 scripts/validate.py
 ```
+
+The package can also be installed, which adds the full command line:
+
+```bash
+python3 -m pip install -e ".[dev]"
+python3 -m paisl --help
+```
+
+## Tooling
+
+| Command | Purpose |
+|---|---|
+| `paisl validate` | Check the registry, the Catalog, and the Skills |
+| `paisl coverage` | Report what is and is not covered |
+| `paisl evidence check` | Check the evidence registry |
+| `paisl governance check` | Check the review records and the promotion gates |
+| `paisl conflicts check` | Report declared conflicts and candidates |
+| `paisl evaluate --suite core-regression` | Run the deterministic evaluation |
+| `paisl report --suite core-regression` | Write the quality report |
+| `paisl compare --baseline FILE --current FILE` | Compare two evaluation reports |
+
+`python scripts/validate.py` keeps working without an installation
+step, with the same output and exit codes as before.
+
+The tools check record integrity. They cannot establish the identity
+or the authority of a reviewer, so reviewer authorisation stays with
+protected branches, CODEOWNERS, and required review rules.
 
 ## Agent Integration
 

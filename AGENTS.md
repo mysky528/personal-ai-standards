@@ -14,6 +14,18 @@ machine-readable standards library.
 4. `skills/**/SKILL.md` — execution instructions.
 5. `docs/governance.md` — lifecycle governance.
 
+The v0.2.0 records extend the registry. Each has its own contract in
+`schemas/`:
+
+6. `schemas/evidence.schema.json` and
+   `schemas/rule-evidence.schema.json` — evidence registry.
+7. `schemas/review.schema.json` and
+   `schemas/semantic-review.schema.json` — lifecycle and bilingual
+   reviews.
+8. `schemas/conflict.schema.json` — declared rule conflicts.
+9. `schemas/evaluation-case.schema.json` and
+   `schemas/evaluation-suite.schema.json` — evaluation material.
+
 If sources conflict, report the conflict.
 Never silently invent a resolution.
 
@@ -38,6 +50,12 @@ Never silently invent a resolution.
 5. Update Catalog when needed.
 6. Run `python3 scripts/validate.py`.
 7. Report changes, risks, and uncertainty.
+
+A change to a Standard that a review already covered needs a new
+review record, and a change of its content needs a version update. A
+Standard is never promoted to `verified` by editing a status field;
+the promotion gates in `docs/governance.md` decide it, and a reviewer
+has to approve it.
 
 ## Skill Requirements
 

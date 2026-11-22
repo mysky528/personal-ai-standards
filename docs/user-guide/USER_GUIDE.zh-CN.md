@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
-# PAISL v0.1.1 用户使用手册
+# PAISL v0.2.0 用户使用手册
 
 > Personal AI Standards Library · User Guide  
-> 文档版本：1.1 · 适用软件版本：PAISL v0.1.1 · 语言：简体中文  
+> 文档版本：2.0 · 适用软件版本：PAISL v0.2.0 · 语言：简体中文  
 > 状态：基于已验收仓库设计的使用说明；具体 Agent 兼容性需在实际环境中验证。
 
 ## 目录
@@ -26,7 +26,7 @@
 
 PAISL（Personal AI Standards Library，个人 AI 标准库）是开放、双语、机器可读的标准与实践库，目标是改善人类向 AI 表达需求的方式，以及 AI 产出的清晰度、结构性、可验证性和复用性。
 
-PAISL **不是**大模型、自动化工作流引擎、通用提示词市场或正式标准机构的认证服务。v0.1.1 的交付物是一个基于 Git 文件的标准注册表、可供 Agent 阅读的 Skills、Schema 和结构校验工具。
+PAISL **不是**大模型、自动化工作流引擎、通用提示词市场或正式标准机构的认证服务。v0.2.0 的交付物是一个基于 Git 文件的标准注册表、可供 Agent 阅读的 Skills、Schema、结构校验工具，以及围绕标准治理与评测的一组命令行工具。
 
 ### 1.2 五个关键概念
 
@@ -40,11 +40,13 @@ PAISL **不是**大模型、自动化工作流引擎、通用提示词市场或�
 
 **关键区别**：Standard 规定“应遵循什么”，Skill 规定“如何在任务中使用”。一个 Skill 可以引用多个 Standard；一个 Standard 也可以被多个 Skill 使用。
 
-### 1.3 v0.1.1 的能力边界
+### 1.3 v0.2.0 的能力边界
 
-**已提供**：12 个 `draft` 标准、7 个 Skill、双语字段、Catalog、JSON Schema、Python 校验器、GitHub Actions 和贡献治理说明。
+**已提供**：12 个 `draft` 标准、7 个 Skill、双语字段、Catalog、JSON Schema、Python 校验器、GitHub Actions 和贡献治理说明；证据登记、生命周期治理、冲突处理与确定性评测的命令行工具；质量报告与回归对比。
 
-**未提供**：MCP Server、REST/GraphQL 服务、自动 Skill 安装、自动事实核验、标准语义冲突检测、执行效果自动打分和官方第三方标准认证。
+**未提供**：MCP Server、REST/GraphQL 服务、自动 Skill 安装、自动事实核验、语义冲突的自动判定、基于 LLM 的自动打分和官方第三方标准认证。
+
+工具能发现的是**候选**冲突：它按确定性元数据比较规则，提示值得人工复核的组合，但不代替人判断，也不把「措辞相似」当作「语义矛盾」。
 
 ### 1.4 适用人群与典型任务
 
@@ -98,11 +100,12 @@ python -m pip install -r requirements-dev.txt
 python scripts/validate.py
 ```
 
-在仓库内容完整且符合 v0.1.1 契约时，**预期**看到：
+在仓库内容完整且符合 v0.2.0 契约时，**预期**看到：
 
 ```text
 === PAISL Validation Report ===
 Standards checked: 12
+Skills checked: 7
 Errors: 0
 Warnings: 0
 
@@ -110,6 +113,22 @@ Validation PASSED
 ```
 
 这是预期示例，不代表本手册已经在你的环境中运行过校验。
+
+v0.2.0 提供了一组命令行工具，校验之外还能查看覆盖、证据、治理、冲突与评测：
+
+```bash
+python -m pip install -e ".[dev]"
+
+python -m paisl validate              # 结构与引用校验
+python -m paisl coverage              # 覆盖报告
+python -m paisl evidence check        # 证据登记与覆盖
+python -m paisl governance check      # 生命周期与晋级门禁
+python -m paisl conflicts check        # 已声明冲突与候选冲突
+python -m paisl evaluate --suite core-regression   # 确定性评测
+python -m paisl report --suite core-regression     # 质量报告
+```
+
+`python scripts/validate.py` 仍然可用，输出与退出码与旧版一致，且无需先安装包。
 
 ### 2.5 第一次手动使用
 
@@ -211,7 +230,7 @@ find standards -type f -name '*.yaml' | sort
 
 ### 4.1 Skill 使用原则
 
-v0.1.1 的 Skill 是仓库中的 Markdown 操作说明，**不是**安装后就能自动运行的可执行程序。Agent 需要能够读取对应文件，并根据其步骤完成任务。具体是否自动发现 `SKILL.md`，取决于 Agent Runtime 的实现和配置。
+v0.2.0 的 Skill 是仓库中的 Markdown 操作说明，**不是**安装后就能自动运行的可执行程序。Agent 需要能够读取对应文件，并根据其步骤完成任务。具体是否自动发现 `SKILL.md`，取决于 Agent Runtime 的实现和配置。
 
 | Skill                 | 使用时机     | 引用标准                          | 预期产物         |
 | --------------------- | -------- | ----------------------------- | ------------ |
@@ -388,7 +407,7 @@ PAISL 仓库位置：<PAISL_ROOT>
 原文：<粘贴原文>
 ```
 
-这是一种**基于文件读取的操作方法**，不是声称 v0.1.1 已具备 OpenCode 原生插件或自动发现功能。
+这是一种**基于文件读取的操作方法**，不是声称 v0.2.0 已具备 OpenCode 原生插件或自动发现功能。
 
 ### 5.4 Agent 输出建议格式
 
@@ -408,7 +427,7 @@ PAISL 仓库位置：<PAISL_ROOT>
 
 ## 06 三个可复现案例
 
-> 复现原则：同一输入、同一 Skill、同一标准版本、同一 Prompt。大模型的措辞可能不同，因此本版采用**行为检查**，不要求逐字匹配。v0.1.1 尚无自动评分器。
+> 复现原则：同一输入、同一 Skill、同一标准版本、同一 Prompt。大模型的措辞可能不同，因此本版采用**行为检查**，不要求逐字匹配。v0.2.0 提供了确定性评测器与结构化评测报告，但仍没有基于 LLM 的自动评分器。
 
 ### 案例 A：技术文档规范化
 
@@ -567,7 +586,7 @@ PAISL 仓库位置：<PAISL_ROOT>
 
 ```yaml
 case_id: case-a
-paisl_release: v0.1.1
+paisl_release: v0.2.0
 skill: ste-writing
 standards:
   - PAISL-COMM-001
@@ -582,7 +601,7 @@ result: "pass | fail | needs_review"
 notes: "<具体观察>"
 ```
 
-这只是人工记录模板，**不是** v0.1.1 已实现的自动评测数据格式或 API。
+这只是人工记录模板。v0.2.0 的结构化评测格式在 `evaluations/cases/*.yaml`，报告由 `paisl evaluate` 生成；两者都不是线上 API。
 
 ## 07 新增与修改标准
 
@@ -656,11 +675,13 @@ tags:
 python scripts/validate.py
 ```
 
-校验覆盖：JSON Schema 结构、标准 ID 与 Catalog 对应关系、目录分类匹配、重复 ID、重复规则 ID、来源 URL 基本格式，以及是否存在未登记 YAML。
+校验覆盖：JSON Schema 结构、标准 ID 与 Catalog 对应关系、目录分类匹配、重复 ID、重复规则 ID、来源 URL 基本格式、是否存在未登记 YAML、Skill 引用完整性、双语字段完整性、许可作用域一致性，以及 v0.2.0 的治理与评测记录。
+
+治理记录还会校验：状态流转是否合法、审查记录的内容摘要是否与当前文件一致、内容变更是否同步更新版本、已发布的审查记录是否被改动过。
 
 ### 8.2 GitHub Actions
 
-工作流：`.github/workflows/validate.yml`。在 `push`、`pull_request` 或手动触发时，使用 Python 3.12 安装开发依赖并运行校验器。CI 通过不能替代人工语义和版权审查。
+工作流：`.github/workflows/validate.yml`。在 `push`、`pull_request` 或手动触发时，使用 Python 3.12 安装开发依赖，运行校验、覆盖、证据、治理、冲突与评测检查，再运行测试套件。CI 通过不能替代人工语义和版权审查。
 
 ### 8.3 常见问题
 
@@ -672,6 +693,12 @@ python scripts/validate.py
 | `Uncataloged standard`            | 新 YAML 未加入 Catalog | 添加 Catalog 条目                            |
 | `ID/category mismatch`            | ID 前缀与分类不一致        | 检查 `id` 和 `category`                     |
 | `duplicate rule IDs`              | 同一标准内重复规则 ID       | 重新分配 `R001` 等编号                          |
+| `unknown standard ID reference`   | Skill 引用了不存在的标准     | 核对 ID 拼写，确认该标准已在 Catalog 登记        |
+| `unknown evidence reference`      | 关联了不存在的证据记录      | 确认 `evidence/records/` 下存在该 ID              |
+| `illegal transition`              | 审查记录声明了非法状态流转    | 按治理文档的流转表修改 `from_status` 与 `to_status` |
+| `the reviewed content digest does not match` | 标准内容在审查之后被修改 | 重新审查并更新记录摘要；内容变更须同步更新版本号       |
+| `must not be modified`            | 已发布的审查记录被改动     | 恢复该文件，改用新增记录的方式更正                  |
+| `fixture path escapes the repository` | 夹具路径指向仓库之外    | 改用仓库内的相对路径                            |
 | `Validation FAILED`               | 一个或多个结构错误          | 阅读全部 `ERROR:` 行并逐项修正                     |
 | Agent 找不到 Skill                   | 工作目录或读取权限问题        | 显式提供文件路径，确认 Runtime 可读取                  |
 | Agent 编造规则                        | 未读取标准文件            | 要求逐项报告已读取的文件和标准 ID                       |
@@ -679,8 +706,8 @@ python scripts/validate.py
 ### 8.4 不属于本版本校验范围的事项
 
 - 规则与原始标准的语义一致性。
-- 规则间的逻辑冲突。
-- 来源链接当前是否可访问、是否可信。
+- 规则之间是否真的矛盾。工具只按确定性元数据给出**候选**，判定仍需人工。
+- 来源链接当前是否可访问、是否可信。证据记录只登记来源与审查状态，不代替人工查证。
 - Skill 是否真正改善任务质量。
 - 不同模型是否给出一致结果。
 - Agent 对恶意外部内容的防护有效性。
@@ -699,7 +726,7 @@ python scripts/validate.py
 - **标准版本**：YAML 内 `version: 0.1.0`，表示条目自身的版本。
 - **Skill 版本**：`SKILL.md` Frontmatter 中的版本，表示操作说明的版本。
 
-三者可能在未来独立演进。当前 v0.1.1 没有实现自动依赖锁定或兼容性求解。
+三者可能在未来独立演进。当前 v0.2.0 没有实现自动依赖锁定或兼容性求解。
 
 ### 9.3 版权与引用
 
@@ -725,7 +752,7 @@ PAISL 中的“STE 启发式”“OWASP ASVS 启发式”等条目是独立的�
 
 ### Q3：能否直接把 PAISL 当作 MCP Server 使用？
 
-不能。v0.1.1 没有 MCP Server。后续版本可能实现标准发现与读取服务。
+不能。v0.2.0 没有 MCP Server。后续版本可能实现标准发现与读取服务。
 
 ### Q4：`Validation PASSED` 是否意味着所有标准可靠？
 
@@ -745,7 +772,7 @@ v0.1.0 是初始映射，部分来源用于说明背景。后续应优先补充�
 
 ### 用户手册验收清单
 
-- [ ] 文档与实际 v0.1.1 仓库目录一致。
+- [ ] 文档与实际 v0.2.0 仓库目录一致。
 - [ ] 新用户能够安装依赖并运行结构校验。
 - [ ] 12 个标准和 7 个 Skills 均有索引。
 - [ ] 三个案例的 Prompt 可复制并人工复现。

@@ -10,3 +10,10 @@ __pycache__/
 .DS_Store
 dist/
 build/
+*.egg-info/
+
+# Generated validation and evaluation reports.
+.paisl/
+
+# Local planning documents are not published.
+docs/planning/

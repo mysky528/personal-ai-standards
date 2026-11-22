@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "SPDX-License-Identifier: MIT",
+  "title": "PAISL Conflict Record",
+  "description": "A declared or suspected overlap between the rules of two Standards.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "schema_version", "rules", "classification", "status",
+    "description", "resolution", "reviewer"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^CONFLICT-[0-9]{4}$"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "rules": {
+      "$comment": "A conflict always involves at least two rules.",
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["standard_id", "rule_id"],
+        "properties": {
+          "standard_id": {
+            "type": "string",
+            "pattern": "^PAISL-(COMM|REAS|PROD|VIS|VER|ENG)-[0-9]{3}$"
+          },
+          "rule_id": {
+            "type": "string",
+            "pattern": "^R[0-9]{3}$"
+          }
+        }
+      }
+    },
+    "classification": {
+      "enum": ["potential", "confirmed", "not_conflicting"]
+    },
+    "status": {
+      "enum": ["open", "resolved", "accepted_exception"]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "resolution": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "reviewer": {
+      "type": ["string", "null"],
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "A resolved conflict needs a rationale and a reviewer.",
+      "if": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {"const": "resolved"}
+        }
+      },
+      "then": {
+        "required": ["resolution", "reviewer"],
+        "properties": {
+          "resolution": {"type": "string", "minLength": 1},
+          "reviewer": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  ]
+}

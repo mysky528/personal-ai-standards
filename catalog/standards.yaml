@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: CC-BY-4.0
-catalog_version: 0.1.1
+catalog_version: 0.2.0
 standards:
   - id: PAISL-COMM-001
     path: standards/communication/ste-writing.yaml

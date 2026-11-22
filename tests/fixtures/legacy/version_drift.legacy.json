@@ -1,0 +1,7 @@
+{
+  "spdx": "SPDX-License-Identifier: MIT",
+  "exit_code": 1,
+  "stdout": "\n=== PAISL Validation Report ===\nStandards checked: 12\nSkills checked: 7\nErrors: 3\nWarnings: 0\nERROR: catalog_version 0.1.0 does not match the latest release 0.1.1\nERROR: README.md: version 0.1.1 does not match catalog_version 0.1.0\nERROR: README.zh-CN.md: version 0.1.1 does not match catalog_version 0.1.0\n\nValidation FAILED\n",
+  "provenance": "legacy",
+  "note": "Output of the pre-v0.2.0 validator, with the version numbers of that release."
+}

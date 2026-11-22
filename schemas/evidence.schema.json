@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "SPDX-License-Identifier: MIT",
+  "title": "PAISL Evidence Record",
+  "description": "A registered source that may support one or more Standard rules.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "schema_version", "title", "source", "review", "notes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^EVD-[0-9]{4}$"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "type", "publisher", "retrieved_at", "accessed"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "type": {
+          "enum": ["official", "primary", "secondary"]
+        },
+        "publisher": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "retrieved_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "accessed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reviewed_by", "reviewed_at", "rationale"],
+      "properties": {
+        "status": {
+          "enum": ["unreviewed", "reviewed", "rejected"]
+        },
+        "reviewed_by": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "reviewed_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "rationale": {
+          "type": ["string", "null"],
+          "minLength": 1
+        }
+      }
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "A reviewed record must name a reviewer, a time, and a rationale, and must document that the source was inspected. A URL alone is never reviewed evidence.",
+      "if": {
+        "type": "object",
+        "required": ["review"],
+        "properties": {
+          "review": {
+            "type": "object",
+            "required": ["status"],
+            "properties": {
+              "status": {"const": "reviewed"}
+            }
+          }
+        }
+      },
+      "then": {
+        "required": ["source"],
+        "properties": {
+          "review": {
+            "required": ["reviewed_by", "reviewed_at", "rationale"],
+            "properties": {
+              "reviewed_by": {"type": "string", "minLength": 1},
+              "reviewed_at": {"type": "string", "format": "date-time"},
+              "rationale": {"type": "string", "minLength": 1}
+            }
+          },
+          "source": {
+            "required": ["accessed", "retrieved_at"],
+            "properties": {
+              "accessed": {"const": true},
+              "retrieved_at": {"type": "string", "format": "date-time"}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

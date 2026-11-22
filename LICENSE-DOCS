@@ -26,8 +26,11 @@ Where the license applies
 | `skills/`                       | CC BY 4.0 | Original Agent Skills            |
 | `standards/`                    | CC BY 4.0 | Original standard summaries      |
 | `catalog/`                      | CC BY 4.0 | Standard index                   |
+| `evidence/`                     | CC BY 4.0 | Evidence registry                |
+| `governance/`                   | CC BY 4.0 | Governance records               |
+| `evaluations/`                  | CC BY 4.0 | Evaluation material              |
 | `*.md` in the repository root   | CC BY 4.0 | Original documentation           |
-| `scripts/`, `schemas/`, `.github/`, config files | MIT | Software components |
+| `scripts/`, `schemas/`, `src/`, `tests/`, `.github/`, config files | MIT | Software components |
 
 Per-directory `LICENSE` files apply to every file in the directory
 in which they appear. Individual files additionally declare their

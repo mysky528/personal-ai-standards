@@ -5,7 +5,7 @@
 
 [English](README.md)
 
-**版本：** 0.1.1  
+**版本：** 0.2.0  
 **状态：** 实验性  
 **语言：** English / 简体中文  
 **MCP：** 延后实现
@@ -67,6 +67,30 @@ Skill 是 Agent 执行流程，不等于第三方标准认证。
 python3 -m pip install -r requirements-dev.txt
 python3 scripts/validate.py
 ```
+
+也可以安装本包，从而获得完整的命令行工具：
+
+```bash
+python3 -m pip install -e ".[dev]"
+python3 -m paisl --help
+```
+
+## 命令行工具
+
+| 命令 | 用途 |
+|---|---|
+| `paisl validate` | 校验注册表、Catalog 与 Skills |
+| `paisl coverage` | 报告已覆盖与未覆盖的部分 |
+| `paisl evidence check` | 校验证据登记 |
+| `paisl governance check` | 校验审查记录与晋级门禁 |
+| `paisl conflicts check` | 报告已声明冲突与候选冲突 |
+| `paisl evaluate --suite core-regression` | 运行确定性评测 |
+| `paisl report --suite core-regression` | 生成质量报告 |
+| `paisl compare --baseline FILE --current FILE` | 对比两份评测报告 |
+
+`python scripts/validate.py` 无需先安装包即可使用，输出与退出码与旧版一致。
+
+工具只校验**记录完整性**。它无法确立审查人的真实身份或授权，因此审查人授权仍由受保护分支、CODEOWNERS 与必需的审查规则承担。
 
 ## 使用方式
 

@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: CC-BY-4.0
+id: SEM-0001
+schema_version: "0.2.0"
+standard_id: PAISL-ENG-001
+standard_version: "0.1.0"
+reviewed_content_sha256: "08418e91bf9a8f456a535b6f4c21229cc4dcfe05492982023c28406db86ae45e"
+languages:
+  - en
+  - zh-CN
+reviewer: "reviewer-id"
+reviewed_at: "2026-11-21T12:00:00Z"
+outcome: needs_work
+summary:
+  en: >-
+    Reference instance for the bilingual semantic review contract. It
+    is not the record of an actual review.
+  zh-CN: >-
+    双语语义审查契约的参考实例。此记录不代表一次真实审查。
+findings:
+  - id: SEM-0001-F001
+    severity: minor
+    field: description.zh-CN
+    description:
+      en: >-
+        The Chinese description is shorter than the English one. A
+        reviewer would confirm that the meaning is preserved.
+      zh-CN: >-
+        中文描述比英文描述简短，审查者需确认语义是否完整保留。

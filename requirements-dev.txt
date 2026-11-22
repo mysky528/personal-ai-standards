@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: MIT
-# PAISL v0.1.0 development dependencies
+# PAISL development dependencies
+#
+# The runtime dependencies are declared in pyproject.toml. This file
+# keeps the CI workflow able to install the toolchain with a plain
+# pip install -r, without building the package.
 
 PyYAML>=6.0,<7.0
 jsonschema>=4.21,<5.0
+pytest>=8,<10

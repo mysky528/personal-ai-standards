@@ -16,6 +16,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # The lifecycle checks read the history of a review record to
+          # prove that it was not modified after publication.
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -23,7 +27,51 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: python -m pip install -r requirements-dev.txt
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
 
       - name: Validate registry and Skills
         run: python scripts/validate.py
+
+      - name: Install PAISL package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Validate through the CLI
+        run: python -m paisl validate
+
+      - name: Report coverage
+        run: python -m paisl coverage
+
+      - name: Check the evidence registry
+        run: python -m paisl evidence check
+
+      - name: Check the lifecycle governance
+        run: python -m paisl governance check
+
+      - name: Check the rule conflicts
+        run: python -m paisl conflicts check
+
+      - name: Run the evaluation suite
+        run: python -m paisl evaluate --suite core-regression
+
+      - name: Run the test suite
+        run: python -m pytest
+
+      - name: Write the reports
+        run: |
+          mkdir -p .paisl/reports
+          python -m paisl report --suite core-regression \
+            --output .paisl/reports/quality.md
+          python -m paisl evaluate --suite core-regression --format json \
+            --output .paisl/reports/evaluation.json
+
+      - name: Upload the reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: paisl-reports
+          path: .paisl/reports/
+          if-no-files-found: error
+
+      - name: Verify the working tree is clean
+        run: test -z "$(git status --porcelain)"
