@@ -35,6 +35,35 @@
   promotion, because the digest of a record covers the whole file,
   the status line included
 
+### Fixed
+- A case whose output fixture is missing is an error. It used to be
+  reported as a failed assertion, which hid an unusable case behind a
+  rule that did not hold.
+- A case whose input fixture is missing is an error. The missing
+  input used to be replaced by an empty string, so the evaluation
+  ran against nothing and the case could even pass.
+- A case whose assertions were all skipped is skipped rather than
+  passed. Nothing was verified, so nothing passed.
+- The regular expression evaluator refuses the dangerous shapes on
+  every platform. The timeout needed SIGALRM and the main thread, so
+  the fallback was an unbounded search. The structural check now
+  works everywhere, and the timeout only adds a limit on top of it.
+- The check commands report a blocking finding with the exit code
+  `1`, so a workflow can gate on them. The advisory findings still
+  return `0`.
+- The run identifier and the input digest cover the evaluation
+  definitions. Two cases that read the same fixtures but assert
+  different things are different evaluations.
+- The evidence coverage starts from the rules of the Standards, so a
+  rule that nobody linked is visible instead of invisible to the
+  gate.
+- An output file belongs to a single case. It used to be applied to
+  every case of a suite, and a suite with an output file is now
+  refused.
+- The command line module no longer describes a single command, and
+  the report uses the required suite when no suite is given.
+- The exit code contract is stated per command and held by a test.
+
 
 ## [0.2.0] - 2026-11-22
 
