@@ -146,6 +146,57 @@ A standard without a Skill reference is reported, never failed. A
 standard may be intended for direct use, and the coverage policy
 says that a missing reference is not automatically an error.
 
+### Lifecycle governance
+
+`python -m paisl governance check` reports the state of the
+lifecycle and the gates that a promotion has to clear.
+
+A Standard may only move along the transitions below.
+
+| From | To | Meaning |
+|---|---|---|
+| `draft` | `review` | The Standard enters review |
+| `review` | `draft` | The review sent it back |
+| `review` | `verified` | The Standard was verified |
+| `verified` | `review` | The verification no longer holds |
+| `verified` | `deprecated` | The Standard was retired |
+| `deprecated` | `draft` | The Standard was reactivated |
+
+`deprecated` to `draft` is a deliberate reactivation and needs a new
+review trail.
+
+Every status change is checked against the review records. A
+Standard that left `draft` must have an approved record, and that
+record must match the current content of the file. A change to the
+content of a Standard invalidates the digest of the record that
+reviewed it, so a modification never inherits a verification. A
+substantive change also requires a version update.
+
+A published review record must not be modified. The check reads the
+history of the file, so it needs a full clone; the continuous
+integration workflow fetches one.
+
+### Promotion gates
+
+A promotion from `review` to `verified` has to clear seven gates.
+
+| Gate | Checked locally |
+|---|---|
+| `valid-standard-yaml` | Yes |
+| `current-bilingual-review` | Yes |
+| `reviewed-evidence-coverage` | Yes |
+| `no-blocking-conflicts` | Yes |
+| `mandatory-evaluation-cases` | Once the evaluation engine exists |
+| `approved-review-record` | Yes |
+| `repository-authorization` | No, enforced outside the repository |
+
+The last gate is the important boundary. A repository-local CLI
+cannot establish the real identity or the authority of a reviewer
+from a YAML string. Reviewer authorization is enforced by protected
+Git branches, CODEOWNERS, and required GitHub review rules. The local
+checks establish record integrity, never identity authenticity, and
+the report says so rather than claiming a check it cannot make.
+
 ### Command line interface
 
 Only the `validate` command exists so far.

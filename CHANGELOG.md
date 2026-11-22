@@ -14,6 +14,7 @@ implemented yet.
 - `python -m paisl validate` command with text and JSON reports
 - `python -m paisl coverage` command with text and JSON reports
 - `python -m paisl evidence check` command with text and JSON reports
+- `python -m paisl governance check` command with text and JSON reports
 - `paisl` console script entry point
 - Test suite covering validator equivalence and CLI behaviour
 - Data contracts for evidence records, rule evidence links,
@@ -31,6 +32,11 @@ implemented yet.
   baseline checks keep their behaviour and their order.
 - The evidence contract now requires a reviewed record to document
   that its source was inspected.
+- The review contract accepts explicit exceptions for rules that a
+  reviewer accepted without reviewed evidence.
+- The continuous integration workflow fetches the full history, so
+  the lifecycle checks can prove that a published review record was
+  not modified.
 
 ### Compatibility
 - `python scripts/validate.py` keeps the same output and exit codes

@@ -186,3 +186,62 @@ def render_evidence_json(coverage: dict) -> str:
     }
 
     return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+
+
+_GATE_MARKERS = {
+    "satisfied": "ok",
+    "not satisfied": "MISSING",
+    "enforced externally": "external",
+}
+
+
+def render_governance_text(governance: dict, show_all: bool = False) -> str:
+    """Render the governance report in the text format.
+
+    By default only the Standards that left `draft` are listed,
+    because the gates describe a promotion. The JSON report always
+    holds every Standard.
+    """
+    out = io.StringIO()
+
+    print("\n=== PAISL Governance Report ===", file=out)
+
+    for status, count in sorted(governance["status_counts"].items()):
+        print(f"Standards in {status}: {count}", file=out)
+
+    print(f"Review records: {governance['review_records']['total']}", file=out)
+    print(f"  approved: {governance['review_records']['approved']}", file=out)
+    print(f"  rejected: {governance['review_records']['rejected']}", file=out)
+    print(f"Semantic reviews: {governance['semantic_reviews']['total']}", file=out)
+
+    listed = 0
+
+    for sid, standard in sorted(governance["standards"].items()):
+        if not show_all and standard["status"] == "draft":
+            continue
+
+        listed += 1
+        print(f"  Promotion gates for {sid} ({standard['status']})", file=out)
+
+        for gate in standard["gates"]:
+            marker = _GATE_MARKERS.get(gate["status"], gate["status"])
+            print(f"    [{marker}] {gate['name']}: {gate['detail']}", file=out)
+
+    if not listed:
+        print(
+            "  No Standard is in the promotion path. Use --all to list "
+            "every Standard.",
+            file=out,
+        )
+
+    return out.getvalue()
+
+
+def render_governance_json(governance: dict) -> str:
+    """Render the governance report as JSON."""
+    payload = {
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "governance": governance,
+    }
+
+    return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"

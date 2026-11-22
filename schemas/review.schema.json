@@ -58,6 +58,25 @@
         "type": "string",
         "pattern": "^EVD-[0-9]{4}$"
       }
+    },
+    "exceptions": {
+      "$comment": "Rules that may lack reviewed evidence because a reviewer accepted the gap explicitly.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "rationale"],
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "pattern": "^R[0-9]{3}$"
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
     }
   }
 }
