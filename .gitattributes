@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# The review records pin the SHA-256 digest of the file bytes. A
+# checkout that changes the line endings changes the digest, and the
+# record of the review no longer matches the file it describes. The
+# line endings are therefore pinned to LF on every platform.
+#
+# The text files of the repository are UTF-8 with LF. The binary files
+# are left to the automatic detection of Git.
+* text=auto eol=lf

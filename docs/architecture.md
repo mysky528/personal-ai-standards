@@ -188,6 +188,11 @@ a record that was edited and then restored is published again and the
 finding goes away. A rule that counted the commits would keep the
 repository broken for ever, with no way out.
 
+The digest covers the exact bytes of the file, so the line endings of
+the checkout have to be the same on every platform. The repository
+pins them to LF, and a checkout that changed them would make every
+record describe a file that is no longer there.
+
 ### Promotion gates
 
 A promotion from `review` to `verified` has to clear seven gates.
@@ -283,6 +288,13 @@ in a child process that can be terminated, and the result travels back
 over a queue. The two paths answer the same question the same way. The
 limit on the input does not depend on the platform, so a case that
 passes on one platform and fails on another never happens.
+
+The result of a child that has ended is read with a short wait and
+not with an immediate read. The queue of a child is flushed before the
+child exits, so an immediate read usually finds it, but the wait
+removes the dependence on that order. The read is repeated thousands
+of times in a test that runs beside the suite, because a fault of
+that kind is rare and random.
 
 A report never carries the material it evaluated. It holds digests
 and a short excerpt, and anything that looks like a credential is

@@ -40,4 +40,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-ra"
+addopts = "-ra -m 'not slow'"
+markers = [
+    "slow: a test that runs for a long time and runs apart from the suite",
+]
