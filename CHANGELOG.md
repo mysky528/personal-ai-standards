@@ -2,6 +2,36 @@
 # Changelog
 
 
+## [Unreleased]
+
+### Fixed
+- The `regex` evaluator gave a different answer on a platform without
+  a timer. The limit on the input was smaller there, so a case that
+  matched on one platform failed on another, and a match in a worker
+  thread failed where the same match in the main thread passed. The
+  limit on the input is the same everywhere now. The bound does not
+  depend on it: the child process can be terminated.
+- The child process of the `regex` evaluator read its result without
+  waiting for it. A result that was still on its way turned a
+  finished match into a failure, and the failure appeared at random.
+  The read waits for a short time now.
+- The finding of a child process that ended without reporting a
+  result repeated the name of an internal exception and left the
+  parentheses empty. It names the exit code of the child and the
+  usual cause, which is a main module that cannot be imported again.
+- The `regex` evaluator did not close the queue of a finished search.
+  The descriptors were released when the queue was collected, and the
+  queue is closed now.
+
+### Added
+- A test file for the boundaries of the result passing of the child
+  process: a match and a miss arrive, an empty match is a match, a
+  pattern that does not compile arrives as an error, a child that
+  ends without reporting does not hang the parent, a child that runs
+  out of time is terminated, and the two paths give the same answer
+  for the same material.
+
+
 ## [0.2.1] - 2026-11-22
 
 A maintenance release. The twelve Standards keep their identifiers,

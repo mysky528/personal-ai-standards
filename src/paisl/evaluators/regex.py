@@ -29,8 +29,8 @@ MAX_PATTERN_LENGTH = 512
 MAX_INPUT_LENGTH = 65536
 MATCH_TIMEOUT_SECONDS = 1.0
 
-# The bound that applies when no timer is available.
-FALLBACK_INPUT_LENGTH = 8192
+# The time the parent waits for the result of a child that has ended.
+RESULT_TIMEOUT_SECONDS = 0.5
 
 # Constructs that make the backtracking engine work without end.
 # A quantified group whose body carries a quantifier, and a
@@ -49,6 +49,10 @@ class RegexTimeout(Exception):
 
 class _NoChildProcess(Exception):
     """Raised when a child process cannot be started."""
+
+
+class _ChildDidNotReport(Exception):
+    """Raised when a child process ends without reporting a result."""
 
 
 def timeout_available() -> bool:
@@ -106,6 +110,12 @@ def _search_in_child_process(pattern: str, text: str):
     outside the main thread. The child is terminated when it takes
     longer than the limit, so a pattern that slips past the shape
     check still cannot stall the run.
+
+    The result travels back over a queue. The read waits for a short
+    time instead of asking for whatever is there at that moment: a
+    child that has ended may still have its result on the way, and a
+    read that gives up too early turns a finished match into a
+    failure.
     """
     context = multiprocessing.get_context("spawn")
     queue = context.Queue()
@@ -116,35 +126,48 @@ def _search_in_child_process(pattern: str, text: str):
     try:
         process.start()
     except (OSError, ValueError, RuntimeError) as exc:
+        queue.close()
         raise _NoChildProcess(str(exc)) from exc
-
-    process.join(MATCH_TIMEOUT_SECONDS)
-
-    if process.is_alive():
-        process.terminate()
-        process.join(1)
-
-        if process.is_alive():  # pragma: no cover - defensive
-            process.kill()
-            process.join(1)
-
-        raise RegexTimeout(
-            f"The pattern did not finish within "
-            f"{MATCH_TIMEOUT_SECONDS} seconds."
-        )
 
     try:
-        outcome, value = queue.get_nowait()
-    except Exception as exc:
-        # The child never reported. The usual reason is that the
-        # main module cannot be imported again, which the spawn
-        # method needs.
-        raise _NoChildProcess(str(exc)) from exc
+        process.join(MATCH_TIMEOUT_SECONDS)
 
-    if outcome == "error":
-        raise re.error(value)
+        if process.is_alive():
+            process.terminate()
+            process.join(1)
 
-    return _Found(value)
+            if process.is_alive():  # pragma: no cover - defensive
+                process.kill()
+                process.join(1)
+
+            raise RegexTimeout(
+                f"The pattern did not finish within "
+                f"{MATCH_TIMEOUT_SECONDS} seconds."
+            )
+
+        try:
+            outcome, value = queue.get(timeout=RESULT_TIMEOUT_SECONDS)
+        except Exception as exc:
+            # The child never reported. The usual reason is that the
+            # main module cannot be imported again, which the spawn
+            # method needs.
+            raise _ChildDidNotReport(
+                f"the child process ended without reporting a result "
+                f"(exit code {process.exitcode}). The main module of "
+                f"the caller has to be importable again, which the "
+                f"spawn method needs."
+            ) from exc
+
+        if outcome == "error":
+            raise re.error(value)
+
+        return _Found(value)
+    finally:
+        queue.close()
+        try:
+            queue.join_thread()
+        except (AssertionError, OSError, ValueError):  # pragma: no cover
+            pass
 
 
 def _search_in_thread(pattern: str, text: str):
@@ -246,7 +269,12 @@ class RegexEvaluator:
                 details={"parameter": "pattern"},
             )
 
-        limit = MAX_INPUT_LENGTH if timeout_available() else FALLBACK_INPUT_LENGTH
+        # The bound on the input is the same on every platform. The
+        # match is bounded by the time limit, and the child process
+        # can be terminated, so a shorter input would only make the
+        # answer depend on the platform: the same case would pass
+        # where a timer exists and fail where it does not.
+        limit = MAX_INPUT_LENGTH
         text = output[:limit]
 
         try:
@@ -258,6 +286,12 @@ class RegexEvaluator:
                     f"The pattern did not finish within "
                     f"{MATCH_TIMEOUT_SECONDS} seconds."
                 ),
+                details={"parameter": "pattern"},
+            )
+        except _ChildDidNotReport as exc:
+            return EvaluationResult(
+                status=ERROR,
+                message=f"The pattern could not be evaluated safely: {exc}",
                 details={"parameter": "pattern"},
             )
         except _NoChildProcess as exc:
