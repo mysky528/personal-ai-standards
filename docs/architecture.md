@@ -230,6 +230,13 @@ fixtures, runs the assertions, and produces the report. Only four
 evaluators may run, and the evaluation contract allowlists their
 names, so a case cannot select executable code.
 
+A file that the caller names is read within a limit of one mebibyte.
+The material under evaluation and the reports of a comparison are read
+into the memory of the process, and the process pays for such a file
+twice over: the bytes and the text. The size is therefore asked for
+before the content is read, and a file that is too large is refused
+with a finding that names it and the limit.
+
 | Evaluator | Checks |
 |---|---|
 | `contains` | The output contains an exact substring |

@@ -699,6 +699,8 @@ python scripts/validate.py
 | `illegal transition`              | 审查记录声明了非法状态流转    | 按治理文档的流转表修改 `from_status` 与 `to_status` |
 | `the reviewed content digest does not match` | 标准内容在审查之后被修改 | 当前修订必须重新审查并新增记录；历史修订的记录只告警，内容变更须同步更新版本号 |
 | `must not be modified`            | 已发布的审查记录被改动     | 恢复该文件，改用新增记录的方式更正                  |
+| `is larger than the tool reads`   | 指定的文件超过 1 MiB 上限   | 拆分材料，或改用夹具；工具在读取前就会拒绝该文件        |
+| `is not UTF-8 text`               | 指定的文件不是 UTF-8 文本   | 转换为 UTF-8 文本后再指定该文件                     |
 | `fixture path escapes the repository` | 夹具路径指向仓库之外    | 改用仓库内的相对路径                            |
 | `Validation FAILED`               | 一个或多个结构错误          | 阅读全部 `ERROR:` 行并逐项修正                     |
 | Agent 找不到 Skill                   | 工作目录或读取权限问题        | 显式提供文件路径，确认 Runtime 可读取                  |
