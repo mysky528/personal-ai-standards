@@ -2,6 +2,28 @@
 # Changelog
 
 
+## [Unreleased]
+
+### Added
+- A test that repeats the child process search thousands of times. The
+  fault it guards against is rare and random, so a fault that happens
+  once in a thousand is gone in a hundred runs and back in a thousand.
+  The test runs beside the suite, in a workflow job of its own, and the
+  suite keeps a shorter repetition of its own.
+- A `.gitattributes` that pins the line endings to LF. The review
+  records pin the digest of the file bytes, and a checkout that
+  changed the line endings would make every record describe a file
+  that is no longer there. The Windows runners of the workflow check
+  the repository out with the line endings of the platform.
+
+### Changed
+- The child process of the regular expression evaluator reads its
+  result with a short wait instead of an immediate read. The queue of
+  a child is flushed before the child exits, so an immediate read
+  usually finds the result, and the wait removes the dependence on
+  that order.
+
+
 ## [0.2.2] - 2026-11-23
 
 A maintenance release. The twelve Standards keep their identifiers,

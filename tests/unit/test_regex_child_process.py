@@ -31,6 +31,11 @@ from paisl.evaluators.regex import (
     RegexEvaluator,
 )
 
+# The repetitions of the stress test. The short run keeps the suite
+# quick, the long run repeats the search thousands of times.
+REPETITIONS = 200
+LONG_REPETITIONS = 3000
+
 
 def _dying_context(real):
     """Return a context whose child ends without reporting anything."""
@@ -147,6 +152,57 @@ def test_the_result_passing_is_reliable():
     for _ in range(20):
         assert regex_module._search_in_child_process("a+", "aaa").found
         assert not regex_module._search_in_child_process("b+", "aaa").found
+
+
+def _repeat_the_search(repetitions: int) -> list:
+    """Search the same short text again and again, and collect the faults."""
+    faults: list = []
+
+    for _ in range(repetitions):
+        try:
+            result = regex_module._search_in_child_process("a+", "aaa")
+        except Exception as exc:
+            faults.append(f"{type(exc).__name__}: {exc}")
+            continue
+
+        if not result.found:
+            faults.append("the match did not arrive")
+
+    return faults
+
+
+def test_the_result_passing_holds_under_repetition():
+    """The result arrives every time, over many repetitions.
+
+    A child that ends and a result that is still on its way are close
+    to each other. The read waits for the result, so the two cannot
+    be confused. The search is repeated, and every answer has to
+    arrive.
+    """
+    faults = _repeat_the_search(REPETITIONS)
+
+    assert not faults, (
+        f"{len(faults)} of {REPETITIONS} searches did not return a "
+        f"result: {faults[:3]}"
+    )
+
+
+@pytest.mark.slow
+def test_the_result_passing_holds_under_a_long_repetition():
+    """The result arrives every time, over thousands of repetitions.
+
+    The fault this guards against is rare and random. A fault that
+    happens once in a thousand is gone in a hundred runs and back in
+    a thousand. The long run is the one that finds it.
+
+    The test is marked slow and runs apart from the suite.
+    """
+    faults = _repeat_the_search(LONG_REPETITIONS)
+
+    assert not faults, (
+        f"{len(faults)} of {LONG_REPETITIONS} searches did not return a "
+        f"result: {faults[:3]}"
+    )
 
 
 def test_both_paths_give_the_same_answer(monkeypatch):
