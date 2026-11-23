@@ -21,6 +21,7 @@ import multiprocessing
 import re
 import signal
 import threading
+import time
 
 from . import ERROR, FAIL, PASS, EvaluationResult
 
@@ -82,15 +83,49 @@ def _timeout_handler(signum, frame):
 
 
 def _search_with_timer(pattern: str, text: str):
-    """Search under a timer, in the current process."""
-    previous = signal.signal(signal.SIGALRM, _timeout_handler)
+    """Search under a timer, in the current process.
+
+    The timer of the process belongs to the caller as much as to the
+    evaluator. What was armed before the match is armed again
+    afterwards, with the time that the match took taken off, so that
+    the deadline of the caller stays where it was.
+    """
+    previous_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+    previous_timer = signal.getitimer(signal.ITIMER_REAL)
+    started = time.monotonic()
+
     signal.setitimer(signal.ITIMER_REAL, MATCH_TIMEOUT_SECONDS)
 
     try:
         return re.search(pattern, text)
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous)
+        signal.signal(signal.SIGALRM, previous_handler)
+        _restore_timer(previous_timer, started)
+
+
+def _restore_timer(previous: tuple, started: float) -> None:
+    """Give the caller back the timer that was found.
+
+    The deadline of the caller does not move. The time that the match
+    took is taken off the time that was left, and a deadline that
+    passed while the match ran fires at once, so that the caller is
+    told as soon as it may be told.
+    """
+    delay, interval = previous
+
+    if delay <= 0:
+        # The caller had no timer armed. There is nothing to give back.
+        return
+
+    elapsed = time.monotonic() - started
+    remaining = delay - elapsed
+
+    if remaining > 0:
+        signal.setitimer(signal.ITIMER_REAL, remaining, interval)
+        return
+
+    signal.setitimer(signal.ITIMER_REAL, 0.000001, interval)
 
 
 def _match_worker(pattern: str, text: str, queue) -> None:

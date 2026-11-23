@@ -27,6 +27,10 @@ class UsageError(PaislError):
     exit_code = EXIT_USAGE
 
 
+class FileTooLargeError(UsageError):
+    """A file that the caller named is larger than the tool reads."""
+
+
 class ExecutionError(PaislError):
     """The tool could not complete because of an execution failure."""
 

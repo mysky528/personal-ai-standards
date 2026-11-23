@@ -230,6 +230,13 @@ fixtures, runs the assertions, and produces the report. Only four
 evaluators may run, and the evaluation contract allowlists their
 names, so a case cannot select executable code.
 
+A file that the caller names is read within a limit of one mebibyte.
+The material under evaluation and the reports of a comparison are read
+into the memory of the process, and the process pays for such a file
+twice over: the bytes and the text. The size is therefore asked for
+before the content is read, and a file that is too large is refused
+with a finding that names it and the limit.
+
 | Evaluator | Checks |
 |---|---|
 | `contains` | The output contains an exact substring |
@@ -295,6 +302,19 @@ child exits, so an immediate read usually finds it, but the wait
 removes the dependence on that order. The read is repeated thousands
 of times in a test that runs beside the suite, because a fault of
 that kind is rare and random.
+
+The timer of the process belongs to the caller as much as to the
+evaluator. The evaluator arms SIGALRM for the length of a match, and
+it gives the caller back the handler and the time that was left, with
+the time that the match took taken off. The deadline of a caller that
+keeps its own alarm with SIGALRM does not move, and the alarm still
+reaches it. A deadline that passed while the match ran fires at once.
+
+The child process would isolate the match from the timer of the
+caller completely, and it costs about sixteen thousand times as much
+as the timer: two microseconds against thirty five milliseconds. The
+evaluator borrows the timer and gives it back, and it isolates the
+match in a child process wherever a timer cannot be armed at all.
 
 A report never carries the material it evaluated. It holds digests
 and a short excerpt, and anything that looks like a credential is

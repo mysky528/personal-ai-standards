@@ -47,7 +47,7 @@ from .lifecycle import (
     promotion_gates,
 )
 from .licensing import validate_license_scope
-from .paths import find_repo_root, read_yaml
+from .paths import find_repo_root, read_named_text, read_yaml
 from .registry import (
     build_standard_index,
     load_catalog,
@@ -802,7 +802,7 @@ def _run_evaluate(args: argparse.Namespace) -> int:
                     f"The output file does not exist: {args.output_file}"
                 )
 
-            output_text = candidate.read_text(encoding="utf-8")
+            output_text = read_named_text(candidate, "output file")
 
         # The evaluation material is validated and its references are
         # resolved, so that a case that names a Standard or a rule
@@ -1030,11 +1030,18 @@ def _run_report(args: argparse.Namespace) -> int:
 
 def _run_compare(args: argparse.Namespace) -> int:
     try:
-        baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
-        current = json.loads(args.current.read_text(encoding="utf-8"))
+        baseline = json.loads(
+            read_named_text(args.baseline, "baseline report")
+        )
+        current = json.loads(
+            read_named_text(args.current, "current report")
+        )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"ERROR: The reports could not be read: {exc}")
         return EXIT_USAGE
+    except PaislError as exc:
+        print(f"ERROR: {exc}")
+        return exc.exit_code
 
     comparison = compare_evaluation_results(baseline, current)
 
