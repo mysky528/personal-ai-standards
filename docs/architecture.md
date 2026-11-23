@@ -296,6 +296,19 @@ removes the dependence on that order. The read is repeated thousands
 of times in a test that runs beside the suite, because a fault of
 that kind is rare and random.
 
+The timer of the process belongs to the caller as much as to the
+evaluator. The evaluator arms SIGALRM for the length of a match, and
+it gives the caller back the handler and the time that was left, with
+the time that the match took taken off. The deadline of a caller that
+keeps its own alarm with SIGALRM does not move, and the alarm still
+reaches it. A deadline that passed while the match ran fires at once.
+
+The child process would isolate the match from the timer of the
+caller completely, and it costs about sixteen thousand times as much
+as the timer: two microseconds against thirty five milliseconds. The
+evaluator borrows the timer and gives it back, and it isolates the
+match in a child process wherever a timer cannot be armed at all.
+
 A report never carries the material it evaluated. It holds digests
 and a short excerpt, and anything that looks like a credential is
 removed from the excerpt.

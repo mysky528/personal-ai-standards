@@ -4,12 +4,25 @@
 
 ## [Unreleased]
 
+### Fixed
+- The `regex` evaluator destroyed the timer of the caller. It armed
+  SIGALRM for the length of a match and gave the handler back
+  afterwards, but the time that was left on the timer of the caller
+  was gone. A caller that keeps its own deadline with SIGALRM never
+  heard its own alarm, and its timeout logic never ended. The
+  evaluator gives the time back as well, with the time that the match
+  took taken off, so the deadline of the caller does not move. A
+  deadline that passed while the match ran fires at once.
+
 ### Added
 - A test that repeats the child process search thousands of times. The
   fault it guards against is rare and random, so a fault that happens
   once in a thousand is gone in a hundred runs and back in a thousand.
   The test runs beside the suite, in a workflow job of its own, and the
   suite keeps a shorter repetition of its own.
+- A test file for the timer of the caller around a match: the alarm of
+  the caller still fires, its deadline does not move, the handler is
+  restored, and the evaluator leaves no timer of its own behind.
 - A `.gitattributes` that pins the line endings to LF. The review
   records pin the digest of the file bytes, and a checkout that
   changed the line endings would make every record describe a file
