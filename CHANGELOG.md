@@ -2,7 +2,28 @@
 # Changelog
 
 
-## [Unreleased]
+## [0.2.3] - 2026-11-23
+
+A maintenance release. The twelve Standards keep their identifiers,
+their versions, and their rules, and the tooling keeps its commands.
+
+The release repairs three boundaries of the tooling that the review
+found.
+
+The regular expression evaluator gave a different answer where no
+timer can be armed, which is a platform without SIGALRM and every
+worker thread. The limit on the input does not depend on the platform
+any more, and the evaluator gives the timer of the caller back, so a
+caller that keeps its own deadline with SIGALRM keeps it.
+
+A file that the caller names was read without a limit. The material
+under evaluation and the reports of a comparison are read into the
+memory of the process, and the size is asked for before the content
+is read now.
+
+The repository pins its line endings. The review records pin the
+digest of the file bytes, and a checkout that changed the line
+endings made every record describe a file that was no longer there.
 
 ### Fixed
 - The `regex` evaluator destroyed the timer of the caller. It armed

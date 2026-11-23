@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
-# PAISL v0.2.2 用户使用手册
+# PAISL v0.2.3 用户使用手册
 
 > Personal AI Standards Library · User Guide  
-> 文档版本：2.2 · 适用软件版本：PAISL v0.2.2 · 语言：简体中文  
+> 文档版本：2.3 · 适用软件版本：PAISL v0.2.3 · 语言：简体中文  
 > 状态：基于已验收仓库设计的使用说明；具体 Agent 兼容性需在实际环境中验证。
 
 ## 目录
