@@ -2,7 +2,17 @@
 # Changelog
 
 
-## [Unreleased]
+## [0.2.2] - 2026-11-23
+
+A maintenance release. The twelve Standards keep their identifiers,
+their versions, and their rules, and the tooling keeps its commands.
+
+The release repairs the regular expression evaluator, which gave a
+different answer where no timer can be armed. The limit on the input
+was smaller on that path, so a case that matched on one platform
+failed on another, and a match in a worker thread failed where the
+same match in the main thread passed. The two paths answer the same
+question the same way now.
 
 ### Fixed
 - The `regex` evaluator gave a different answer on a platform without

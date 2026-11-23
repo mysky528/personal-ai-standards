@@ -6,6 +6,6 @@ governance and evaluation services described in the v0.2.0 technical
 design.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 __all__ = ["__version__"]
