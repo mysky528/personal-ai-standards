@@ -277,6 +277,13 @@ limits the length of a pattern and of the input, refuses constructs
 that can backtrack without end, and bounds how long a single match
 may run.
 
+The bound is the same on every platform. Where a timer exists, the
+match runs in this process under it. Where it does not, the match runs
+in a child process that can be terminated, and the result travels back
+over a queue. The two paths answer the same question the same way. The
+limit on the input does not depend on the platform, so a case that
+passes on one platform and fails on another never happens.
+
 A report never carries the material it evaluated. It holds digests
 and a short excerpt, and anything that looks like a credential is
 removed from the excerpt.
